@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compliance Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>compliance</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link nav-link-active">Compliance</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Compliance Report</div>
+            <p class="page-subtitle">
+                Audit-ready summary for authentication failures, privilege escalation, and critical events.
+            </p>
+        </div>
+        <a href="{{ url_for('export_compliance') }}" class="button button-secondary">Export Report</a>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Authentication Failures by IP</div>
+                <div class="card-subtitle">Failed login attempts — potential brute force</div>
+            </div>
+            {% if failed_by_ip %}
+            <table>
+                <thead>
+                    <tr><th>Source IP</th><th>Failed attempts</th></tr>
+                </thead>
+                <tbody>
+                    {% for ip, count in failed_by_ip.items() %}
+                    <tr><td>{{ ip }}</td><td>{{ count }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No failed logins in dataset.</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Privilege Escalation (sudo) by User</div>
+                <div class="card-subtitle">Sudo usage — requires audit trail</div>
+            </div>
+            {% if sudo_by_user %}
+            <table>
+                <thead>
+                    <tr><th>User</th><th>Sudo commands</th></tr>
+                </thead>
+                <tbody>
+                    {% for user, count in sudo_by_user.items() %}
+                    <tr><td>{{ user }}</td><td>{{ count }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No sudo usage in dataset.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+            <div class="card-title">Critical Alerts</div>
+            <div class="card-subtitle">HIGH and CRITICAL — require immediate review</div>
+        </div>
+        {% if critical_alerts %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Severity</th><th>Type</th><th>Message</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in critical_alerts %}
+                    <tr>
+                        <td>
+                            {% if a.severity == "HIGH" %}<span class="badge badge-high">High</span>
+                            {% elif a.severity == "CRITICAL" %}<span class="badge badge-critical">Critical</span>
+                            {% else %}<span class="badge badge-pill">{{ a.severity }}</span>{% endif %}
+                        </td>
+                        <td>{{ a.type }}</td>
+                        <td>{{ a.message }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No critical alerts.</div>
+        {% endif %}
+    </div>
+
+    <div class="card card-muted" style="margin-top: 20px;">
+        <div class="card-header">
+            <div class="card-title">Report Summary</div>
+        </div>
+        <p style="font-size: 13px; color: #9ca3af;">
+            Total events: <strong>{{ total_events }}</strong> &nbsp;|&nbsp;
+            Total alerts: <strong>{{ total_alerts }}</strong> &nbsp;|&nbsp;
+            Critical alerts: <strong>{{ critical_alerts|length }}</strong>
+        </p>
+    </div>
+
+    <div class="footer">
+        Use <span>Export Report</span> for audit documentation.
+    </div>
+</div>
+
+</body>
+</html>

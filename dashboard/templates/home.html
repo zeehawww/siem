@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>mini project</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link nav-link-active">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+    </div>
+</div>
+
+<div class="page-shell">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">Security Operations Snapshot</div>
+            <p class="page-subtitle">
+                End‑to‑end mini SIEM: ingest simulated auth logs, normalize events,
+                run detection logic and visualize alerts.
+            </p>
+        </div>
+        <div class="pill">
+            <span class="pill-dot"></span>
+            Live from sample log dataset
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="hero-text">
+            <h1>From raw SSH logs to actionable security insights.</h1>
+            <p>
+                This dashboard walks through the typical SIEM pipeline:
+                log collection, parsing &amp; enrichment, rule‑based detection
+                and analyst‑friendly visualization.
+            </p>
+
+            <div class="hero-highlights">
+                <div class="hero-highlight">Noise reduction (alert deduplication)</div>
+                <div class="hero-highlight">Behavior analytics (new IP for user)</div>
+                <div class="hero-highlight">Compliance reporting</div>
+                <div class="hero-highlight">Attack chain correlation</div>
+            </div>
+
+            <div style="margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap;">
+                <form action="{{ url_for('logs') }}">
+                    <button class="button" type="submit">
+                        View normalized events
+                    </button>
+                </form>
+                <form action="{{ url_for('analysis') }}">
+                    <button class="button button-secondary" type="submit">
+                        Open detection overview
+                    </button>
+                </form>
+            </div>
+
+            <div class="home-container" style="margin-top: 22px;">
+                <div class="home-card" onclick="location.href='{{ url_for('logs') }}'">
+                    <h2>Log Explorer</h2>
+                    <p>Search, filter, and export events to CSV.</p>
+                    <small>Backed by `collector` and `parser` modules.</small>
+                </div>
+                <div class="home-card" onclick="location.href='{{ url_for('analysis') }}'">
+                    <h2>Detection &amp; Trends</h2>
+                    <p>Metrics, severity chart, re‑run pipeline, simulate new events.</p>
+                    <small>Uses the rule‑based `detection_engine`.</small>
+                </div>
+                <div class="home-card" onclick="location.href='{{ url_for('correlation') }}'">
+                    <h2>Attack Chain</h2>
+                    <p>Correlate events by IP or user — see the attack timeline.</p>
+                    <small>Visualize failed → success → sudo progression.</small>
+                </div>
+                <div class="home-card" onclick="location.href='{{ url_for('compliance') }}'">
+                    <h2>Compliance Report</h2>
+                    <p>Audit-ready summary: failed logins, sudo usage, critical alerts.</p>
+                    <small>One-click export for compliance documentation.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-aside">
+            <div class="card">
+                <div class="hero-aside-title">Pipeline Stages</div>
+                <ul class="timeline">
+                    <li><span class="severity-dot low"></span><strong>Collect</strong> – read raw SSH auth logs from `logs/simulated_auth.log`.</li>
+                    <li><span class="severity-dot medium"></span><strong>Parse</strong> – normalize into JSON events with timestamp, user, IP &amp; type.</li>
+                    <li><span class="severity-dot.high"></span><strong>Detect</strong> – apply rules such as brute‑force and sudo usage.</li>
+                    <li><span class="severity-dot critical"></span><strong>Alert</strong> – surface notable activity with severity labels.</li>
+                </ul>
+            </div>
+
+            <div class="card card-muted">
+                <div class="hero-aside-title">How to showcase</div>
+                <p style="font-size:13px; color:#9ca3af; margin-bottom:10px;">
+                    1) Explain the architecture modules.<br>
+                    2) Show Logs, Analysis, Alerts (with deduplication &amp; behavior analytics).<br>
+                    3) Open Attack Chain, pick an IP, show the event timeline.<br>
+                    4) Open Compliance, show audit-ready report and export.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Built with <span>Python + Flask</span> and a touch of <span>Chart.js</span>.
+    </div>
+</div>
+
+</body>
+</html>

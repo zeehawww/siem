@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini SIEM Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>legacy</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link nav-link-active">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="card card-muted">
+        <div class="card-header">
+            <div class="card-title">Legacy view</div>
+            <div class="card-subtitle">This template is kept only for backwards compatibility</div>
+        </div>
+        <p style="font-size:13px; color:#9ca3af; margin-bottom:8px;">
+            The main entry point for the dashboard is now the
+            modernized <strong>Overview</strong> page (`home.html`).
+        </p>
+        <form action="{{ url_for('home') }}">
+            <button type="submit" class="button button-secondary">Go to new overview</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

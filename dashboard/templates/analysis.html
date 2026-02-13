@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>analysis</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link nav-link-active">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Detection Overview</div>
+            <p class="page-subtitle">
+                Quick at‑a‑glance metrics on authentication activity and rule‑based detections.
+            </p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <form action="{{ url_for('run_analysis') }}" style="display:inline;">
+                <button class="button" type="submit">Re‑run pipeline</button>
+            </form>
+            <form action="{{ url_for('simulate') }}" style="display:inline;">
+                <button class="button button-secondary" type="submit">Simulate new events</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid grid-3">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Total events</div>
+                    <div class="card-subtitle">Ingested into `events.json`</div>
+                </div>
+            </div>
+            <div class="metric-value">{{ stats.total_events }}</div>
+            <div class="metric-label">From {{ stats.unique_ips }} unique source IPs</div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Failed logins</div>
+                    <div class="card-subtitle">Potential brute‑force surface</div>
+                </div>
+            </div>
+            <div class="metric-value">{{ stats.failed_logins }}</div>
+            <div class="metric-label">
+                Success logins: {{ stats.success_logins }} | Sudo events: {{ stats.sudo_usage }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">High‑risk events</div>
+                    <div class="card-subtitle">HIGH and CRITICAL combined</div>
+                </div>
+            </div>
+            <div class="metric-value">{{ stats.high_and_critical }}</div>
+            <div class="metric-label">
+                Last event at: {{ stats.last_timestamp or "n/a" }}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top: 20px;">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Severity distribution</div>
+                <div class="card-subtitle">Visual breakdown of event severities</div>
+            </div>
+            <canvas id="severityChart" height="200"></canvas>
+        </div>
+
+        <div class="card card-muted">
+            <div class="card-header">
+                <div class="card-title">How detections work</div>
+                <div class="card-subtitle">Backed by `analyzer/detection_engine.py`</div>
+            </div>
+            <p style="font-size:13px; color:#9ca3af; margin-bottom:10px;">
+                This mini SIEM focuses on a few common SSH‑related behaviors:
+            </p>
+            <ul class="timeline">
+                <li>
+                    <span class="severity-dot high"></span>
+                    <strong>BRUTE_FORCE</strong> – 3+ consecutive failed logins from the same IP.
+                </li>
+                <li>
+                    <span class="severity-dot critical"></span>
+                    <strong>COMPROMISED_ACCOUNT</strong> – success after multiple failures.
+                </li>
+                <li>
+                    <span class="severity-dot high"></span>
+                    <strong>PRIV_ESC</strong> – sudo usage events.
+                </li>
+                <li>
+                    <span class="severity-dot critical"></span>
+                    <strong>ROOT_LOGIN</strong> – direct root login detection.
+                </li>
+            </ul>
+            <div class="tag-row">
+                <span class="tag">Rule‑based detection</span>
+                <span class="tag">Stateful IP tracking</span>
+                <span class="tag">Simple to extend with more rules</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Detection logic powered by <span>`analyzer.detection_engine`</span>.
+    </div>
+</div>
+
+<script>
+const severityLabels = {{ severity.keys() | list | safe }};
+const severityCounts = {{ severity.values() | list | safe }};
+
+const ctx = document.getElementById('severityChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: severityLabels,
+            datasets: [{
+                data: severityCounts,
+                backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'],
+                borderRadius: 6,
+                maxBarThickness: 36
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af' }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(55, 65, 81, 0.6)' },
+                    ticks: { color: '#6b7280', precision: 0 }
+                }
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attack Chain</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>correlation</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link nav-link-active">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Attack Chain / Correlation View</div>
+            <p class="page-subtitle">
+                See how events unfold over time for a given IP or user — e.g. failed logins → success → sudo.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Select IP or User</div>
+            <div class="card-subtitle">View the event timeline for a single entity</div>
+        </div>
+
+        <form class="search-row" method="get" action="{{ url_for('correlation') }}">
+            <select name="entity" class="select" onchange="this.form.submit()">
+                <option value="">— Select IP or User —</option>
+                <optgroup label="IPs">
+                    {% for ip in ips %}
+                    <option value="{{ ip }}" {% if selected == ip %}selected{% endif %}>{{ ip }}</option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Users">
+                    {% for u in users %}
+                    <option value="{{ u }}" {% if selected == u %}selected{% endif %}>{{ u }}</option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+        </form>
+
+        {% if chains %}
+        <div class="attack-chain">
+            {% for chain in chains %}
+            <div class="chain-label">{{ chain.label }} ({{ chain.events|length }} events)</div>
+            <div class="chain-timeline">
+                {% for e in chain.events %}
+                <div class="chain-node chain-node-{{ e.severity|lower }}">
+                    <div class="chain-node-time">{{ e.timestamp }}</div>
+                    <div class="chain-node-type">{{ e.event_type }}</div>
+                    <div class="chain-node-detail">
+                        {% if e.username %}user: {{ e.username }}{% endif %}
+                        {% if e.ip %} · {{ e.ip }}{% endif %}
+                    </div>
+                    {% if not loop.last %}
+                    <div class="chain-arrow">→</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        {% elif selected %}
+        <div class="empty-state">No events found for {{ selected }}.</div>
+        {% else %}
+        <div class="empty-state">Select an IP or user above to see the attack chain timeline.</div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        Correlates events by <span>IP</span> or <span>username</span> to visualize attack progression.
+    </div>
+</div>
+
+</body>
+</html>

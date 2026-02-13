@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alerts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        Mini SIEM
+        <span>alerts</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link nav-link-active">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Detection Alerts</div>
+            <p class="page-subtitle">
+                Persisted alerts from the last pipeline run — raised by the detection engine.
+            </p>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="{{ url_for('export_alerts') }}" class="button button-secondary">Export CSV</a>
+            <div class="pill">
+                <span class="pill-dot"></span>
+                {{ alerts|length }} alerts
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Alert queue</div>
+            <div class="card-subtitle">Sorted in the order they would appear to an analyst</div>
+        </div>
+
+        <div class="table-wrapper">
+            {% if alerts %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alerts %}
+                    <tr>
+                        <td>{{ a.id }}</td>
+                        <td>{{ a.timestamp[:19] if a.timestamp else '-' }}</td>
+                        <td>{{ a.type }}</td>
+                        <td>
+                            {% if a.severity == "LOW" %}
+                                <span class="badge badge-low">Low</span>
+                            {% elif a.severity == "MEDIUM" %}
+                                <span class="badge badge-medium">Medium</span>
+                            {% elif a.severity == "HIGH" %}
+                                <span class="badge badge-high">High</span>
+                            {% elif a.severity == "CRITICAL" %}
+                                <span class="badge badge-critical">Critical</span>
+                            {% else %}
+                                <span class="badge badge-pill">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ a.message }}{% if a.count and a.count > 1 %} <span class="badge badge-pill">×{{ a.count }}</span>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <div class="empty-state">
+                    No alerts were generated from the current dataset.
+                    Try running the analysis again to ingest more events.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer">
+        Alerts persisted to <span>`storage/alerts.json`</span> during pipeline run.
+    </div>
+</div>
+
+</body>
