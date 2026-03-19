@@ -62,4 +62,6 @@ Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.
 Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22
 Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow
 Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22
+Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id
 Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22
+Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22

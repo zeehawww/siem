@@ -1,522 +1,672 @@
 [
     {
         "timestamp": "Jan 27 10:22:01",
+        "hour": 10,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "192.168.1.10",
+        "location": "Internal",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 10:22:01 kali sshd[1234]: Failed password for invalid user admin from 192.168.1.10 port 22"
     },
     {
         "timestamp": "Jan 27 10:22:05",
+        "hour": 10,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "192.168.1.10",
+        "location": "Internal",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 10:22:05 kali sshd[1234]: Failed password for invalid user admin from 192.168.1.10 port 22"
     },
     {
         "timestamp": "Jan 27 10:22:10",
+        "hour": 10,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "192.168.1.10",
+        "location": "Internal",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 10:22:10 kali sshd[1234]: Failed password for invalid user admin from 192.168.1.10 port 22"
     },
     {
         "timestamp": "Jan 27 10:22:15",
+        "hour": 10,
         "event_type": "SUCCESS_LOGIN",
         "username": "user",
         "ip": "192.168.1.10",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 10:22:15 kali sshd[1234]: Accepted password for user from 192.168.1.10 port 22"
     },
     {
         "timestamp": "Jan 27 10:23:01",
+        "hour": 10,
         "event_type": "SUDO_USAGE",
         "username": "user",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 10:23:01 kali sudo: user : TTY=pts/0 ; COMMAND=/bin/ls"
     },
     {
         "timestamp": "Jan 27 10:24:01",
+        "hour": 10,
         "event_type": "SUCCESS_LOGIN",
         "username": "root",
         "ip": "10.0.0.5",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 10:24:01 kali sshd[2222]: Accepted password for root from 10.0.0.5 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:01",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "hacker",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:01",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "hacker",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:01",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "hacker",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:01",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "hacker",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 11:01:00",
+        "hour": 11,
         "event_type": "SUDO_USAGE",
         "username": "backup",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
     },
     {
         "timestamp": "Jan 27 12:05:00",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "10.20.30.40",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "admin",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:01",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "hacker",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:05",
+        "hour": 11,
         "event_type": "FAILED_LOGIN",
         "username": "root",
         "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "MEDIUM",
         "raw_log": "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 12:01:00",
+        "hour": 12,
         "event_type": "SUDO_USAGE",
         "username": "developer",
         "ip": null,
+        "location": "Local",
         "severity": "HIGH",
         "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
     },
     {
         "timestamp": "Jan 27 12:00:01",
+        "hour": 12,
         "event_type": "SUCCESS_LOGIN",
         "username": "developer",
         "ip": "172.16.0.99",
+        "location": "Internal",
         "severity": "LOW",
         "raw_log": "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22"
     },
     {
         "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
         "event_type": "SUCCESS_LOGIN",
         "username": "backup",
         "ip": "203.0.113.42",
+        "location": "Russia",
+        "severity": "LOW",
+        "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
+    },
+    {
+        "timestamp": "Jan 27 11:00:15",
+        "hour": 11,
+        "event_type": "SUCCESS_LOGIN",
+        "username": "backup",
+        "ip": "203.0.113.42",
+        "location": "Russia",
         "severity": "LOW",
         "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
+    },
+    {
+        "timestamp": "Jan 27 11:00:10",
+        "hour": 11,
+        "event_type": "FAILED_LOGIN",
+        "username": "admin",
+        "ip": "203.0.113.42",
+        "location": "Russia",
+        "severity": "MEDIUM",
+        "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
     }
 ]

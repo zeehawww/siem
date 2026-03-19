@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, request, Response
 import csv
+import hashlib
 import io
 import json
 import os
@@ -7,6 +8,7 @@ import random
 import subprocess
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 
 # Ensure the project root (one level up from this file) is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,6 +53,10 @@ def analysis():
     events = load_events()
     severity_count = Counter(e["severity"] for e in events)
 
+    # Compute Top Attacker IPs (Failed log ins)
+    attacker_ips = Counter(e["ip"] for e in events if e.get("event_type") == "FAILED_LOGIN" and e.get("ip"))
+    top_attackers = attacker_ips.most_common(5)
+
     stats = {
         "total_events": len(events),
         "failed_logins": sum(1 for e in events if e["event_type"] == "FAILED_LOGIN"),
@@ -67,6 +73,7 @@ def analysis():
         "analysis.html",
         severity=severity_count,
         stats=stats,
+        top_attackers=top_attackers,
     )
 
 
@@ -225,30 +232,96 @@ def export_compliance():
     )
 
 
-@app.route("/export/alerts")
-def export_alerts():
-    """Export persisted alerts to CSV."""
+@app.route("/export/report")
+def export_report():
+    """Export enriched security report as a standalone printable HTML page."""
+    events = load_events()
     alerts = load_alerts()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["id", "timestamp", "type", "severity", "message", "event_context"])
-    for idx, a in enumerate(alerts, start=1):
-        ev = a.get("event") or {}
-        ctx = f"{ev.get('event_type','')} | {ev.get('username','')} | {ev.get('ip','')}"
-        writer.writerow([
-            idx,
-            a.get("timestamp", ""),
-            a.get("type", ""),
-            a.get("severity", ""),
-            a.get("message", ""),
-            ctx,
-        ])
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=siem-alerts.csv"},
+
+    # ── Metadata ────────────────────────────────────────────────────────────
+    now = datetime.now(timezone.utc)
+    generated_at = now.strftime("%Y-%m-%d %H:%M UTC")
+    report_id = "RPT-" + hashlib.sha1(now.isoformat().encode()).hexdigest()[:8].upper()
+
+    # ── Attacker / sudo tables ──────────────────────────────────────────────
+    failed_by_ip = Counter(e["ip"] for e in events if e.get("event_type") == "FAILED_LOGIN" and e.get("ip"))
+    top_attackers = failed_by_ip.most_common(10)
+
+    sudo_by_user = Counter(e["username"] for e in events if e.get("event_type") == "SUDO_USAGE" and e.get("username"))
+    top_sudo = sudo_by_user.most_common(10)
+
+    critical_alerts = [a for a in alerts if a.get("severity") in ("HIGH", "CRITICAL")]
+
+    # ── Severity breakdown ──────────────────────────────────────────────────
+    severity_count = Counter(e["severity"] for e in events)
+    total_e = len(events) or 1
+    severity_breakdown = [
+        {"label": sev, "count": severity_count.get(sev, 0),
+         "pct": round(severity_count.get(sev, 0) / total_e * 100)}
+        for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+        if severity_count.get(sev, 0) > 0
+    ]
+
+    # ── Event type breakdown ────────────────────────────────────────────────
+    etype_count = Counter(e["event_type"] for e in events if e.get("event_type"))
+    event_type_breakdown = [
+        {"label": k, "count": v, "pct": round(v / total_e * 100)}
+        for k, v in etype_count.most_common()
+    ]
+
+    # ── GeoIP location breakdown ────────────────────────────────────────────
+    location_counter = Counter(
+        e["location"] for e in events if e.get("location") and e["location"] != "Internal"
+    )
+    location_breakdown = location_counter.most_common()
+
+    # ── Unique IPs ──────────────────────────────────────────────────────────
+    unique_ips = len({e["ip"] for e in events if e.get("ip")})
+
+    # ── Risk score summary (from alerts) ────────────────────────────────────
+    risk_scores = [a.get("risk_score", 0) for a in alerts if a.get("risk_score")]
+    risk_score_summary = {
+        "avg": round(sum(risk_scores) / len(risk_scores)) if risk_scores else 0,
+        "max": max(risk_scores) if risk_scores else 0,
+        "total": sum(risk_scores) if risk_scores else 0,
+    }
+
+    # ── MITRE ATT&CK tactic frequency ───────────────────────────────────────
+    mitre_counter = Counter(
+        f"{a['mitre_technique']} — {a['mitre_tactic']}"
+        for a in alerts
+        if a.get('mitre_tactic') and a['mitre_tactic'] != 'Unknown'
+    )
+    mitre_tactic_freq = mitre_counter.most_common()
+
+    # ── Overall risk posture ─────────────────────────────────────────────────
+    max_sev = next(
+        (s for s in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+         if any(a.get("severity") == s for a in alerts)),
+        "LOW"
     )
 
+    return render_template(
+        "report_export.html",
+        # metadata
+        report_id=report_id,
+        generated_at=generated_at,
+        # tables
+        top_attackers=top_attackers,
+        top_sudo=top_sudo,
+        critical_alerts=critical_alerts,
+        # counts
+        total_events=len(events),
+        total_alerts=len(alerts),
+        unique_ips=unique_ips,
+        # breakdowns
+        severity_breakdown=severity_breakdown,
+        event_type_breakdown=event_type_breakdown,
+        location_breakdown=location_breakdown,
+        risk_score_summary=risk_score_summary,
+        mitre_tactic_freq=mitre_tactic_freq,
+        max_severity=max_sev,
+    )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

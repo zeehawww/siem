@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM Security Report — {{ report_id }}</title>
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #1e293b;
+            background: #f8fafc;
+            padding: 0;
+        }
+
+        /* ── Page wrapper ─────────────────────────────────────────────── */
+        .page {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* ── Cover / Header ───────────────────────────────────────────── */
+        .cover {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f4c81 100%);
+            color: #fff;
+            padding: 48px 52px 40px;
+            position: relative;
+        }
+
+        .cover::after {
+            content: "";
+            display: block;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4, #10b981);
+        }
+
+        .cover-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+
+        .org-name {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #93c5fd;
+        }
+
+        .classification {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            padding: 4px 10px;
+            border-radius: 3px;
+        }
+
+        .report-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+        }
+
+        .report-subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 28px;
+        }
+
+        .cover-meta {
+            display: flex;
+            gap: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 20px;
+        }
+
+        .cover-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .cover-meta-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748b;
+        }
+
+        .cover-meta-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        /* ── Posture bar ──────────────────────────────────────────────── */
+        .posture-banner {
+            padding: 14px 52px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .posture-critical {
+            background: #fff1f2;
+            color: #9f1239;
+            border-left: 4px solid #ef4444;
+        }
+
+        .posture-high {
+            background: #fff7ed;
+            color: #9a3412;
+            border-left: 4px solid #f97316;
+        }
+
+        .posture-medium {
+            background: #fefce8;
+            color: #854d0e;
+            border-left: 4px solid #eab308;
+        }
+
+        .posture-low {
+            background: #f0fdf4;
+            color: #14532d;
+            border-left: 4px solid #22c55e;
+        }
+
+        .posture-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .posture-critical .posture-dot {
+            background: #ef4444;
+        }
+
+        .posture-high .posture-dot {
+            background: #f97316;
+        }
+
+        .posture-medium .posture-dot {
+            background: #eab308;
+        }
+
+        .posture-low .posture-dot {
+            background: #22c55e;
+        }
+
+        /* ── Actions bar ──────────────────────────────────────────────── */
+        .actions-bar {
+            padding: 14px 52px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            background: #1d4ed8;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .btn-print:hover {
+            background: #1e40af;
+        }
+
+        /* ── Body content ─────────────────────────────────────────────── */
+        .content {
+            padding: 40px 52px;
+        }
+
+        /* ── Executive Summary ────────────────────────────────────────── */
+        .exec-summary {
+            background: #f1f5f9;
+            border-left: 3px solid #3b82f6;
+            border-radius: 0 6px 6px 0;
+            padding: 18px 22px;
+            margin-bottom: 40px;
+            font-size: 13.5px;
+            color: #334155;
+            line-height: 1.7;
+        }
+
+        .exec-summary strong {
+            color: #0f172a;
+        }
+
+        /* ── KPI Cards ────────────────────────────────────────────────── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px 14px;
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+
+        .kpi-value.red {
+            color: #dc2626;
+        }
+
+        .kpi-value.orange {
+            color: #d97706;
+        }
+
+        .kpi-value.blue {
+            color: #2563eb;
+        }
+
+        .kpi-label {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        /* ── Section ──────────────────────────────────────────────────── */
+        .section {
+            margin-bottom: 44px;
+            page-break-inside: avoid;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .section-num {
+            background: #0f172a;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+        }
+
+        /* ── Tables ───────────────────────────────────────────────────── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 9px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        code {
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 12px;
+        }
+
+        /* ── Progress bars ────────────────────────────────────────────── */
+        .bar-wrap {
+            width: 120px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            height: 6px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        .bar-fill {
+            height: 6px;
+            border-radius: 99px;
+        }
+
+        .bar-critical {
+            background: #ef4444;
+        }
+
+        .bar-high {
+            background: #f97316;
+        }
+
+        .bar-medium {
+            background: #eab308;
+        }
+
+        .bar-low {
+            background: #22c55e;
+        }
+
+        .bar-default {
+            background: #3b82f6;
+        }
+
+        /* ── Badges ───────────────────────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            font-size: 10.5px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .badge-critical {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .badge-high {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .badge-medium {
+            background: #fef9c3;
+            color: #a16207;
+        }
+
+        .badge-low {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* ── Risk score chip ──────────────────────────────────────────── */
+        .risk-chip {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .risk-chip.risk-90 {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .risk-chip.risk-70 {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .risk-chip.risk-45 {
+            background: #fef9c3;
+            color: #a16207;
+        }
+
+        .risk-chip.risk-15 {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* ── Empty state ──────────────────────────────────────────────── */
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 13px;
+            border: 1px dashed #e2e8f0;
+            border-radius: 6px;
+        }
+
+        /* ── Two-col grid ─────────────────────────────────────────────── */
+        .col2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-bottom: 44px;
+        }
+
+        .col2-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .col2-card table th:first-child,
+        .col2-card table td:first-child {
+            padding-left: 16px;
+        }
+
+        /* ── Footer ───────────────────────────────────────────────────── */
+        .report-footer {
+            margin-top: 56px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* ── Print ────────────────────────────────────────────────────── */
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+
+            .page {
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .cover {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .posture-banner {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .kpi-card {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!--  COVER                                                            -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="cover">
+            <div class="cover-top">
+                <div class="org-name">Mini SIEM &nbsp;·&nbsp; Security Operations</div>
+                <div class="classification">Confidential — Internal Use Only</div>
+            </div>
+            <div class="report-title">Security Incident &amp; Event Report</div>
+            <div class="report-subtitle">Authentication, Privilege Escalation &amp; Threat Intelligence Summary</div>
+            <div class="cover-meta">
+                <div class="cover-meta-item">
+                    <span class="cover-meta-label">Report ID</span>
+                    <span class="cover-meta-value">{{ report_id }}</span>
+                </div>
+                <div class="cover-meta-item">
+                    <span class="cover-meta-label">Generated</span>
+                    <span class="cover-meta-value">{{ generated_at }}</span>
+                </div>
+                <div class="cover-meta-item">
+                    <span class="cover-meta-label">Events Analysed</span>
+                    <span class="cover-meta-value">{{ total_events }}</span>
+                </div>
+                <div class="cover-meta-item">
+                    <span class="cover-meta-label">Alerts Raised</span>
+                    <span class="cover-meta-value">{{ total_alerts }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!--  RISK POSTURE BANNER                                              -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="posture-banner posture-{{ max_severity | lower }}">
+            <span class="posture-dot"></span>
+            Overall Risk Posture: <strong>{{ max_severity }}</strong>
+            &nbsp;·&nbsp;
+            Average Risk Score: <strong>{{ risk_score_summary.avg }} / 100</strong>
+            &nbsp;·&nbsp;
+            Max Risk Score: <strong>{{ risk_score_summary.max }}</strong>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!--  ACTIONS BAR (no-print)                                          -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="actions-bar no-print">
+            <button class="btn-print" onclick="window.print()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                Print to PDF
+            </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!--  CONTENT                                                         -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="content">
+
+            <!-- Executive Summary -->
+            <div class="exec-summary">
+                During this audit window, <strong>{{ total_events }} security events</strong> were observed
+                originating from <strong>{{ unique_ips }} unique source IPs</strong>.
+                The analysis engine raised <strong>{{ total_alerts }} alerts</strong>, of which
+                <strong>{{ critical_alerts | length }}</strong> were classified as <strong>HIGH or CRITICAL</strong>
+                severity, requiring immediate review.
+                {% if risk_score_summary.avg >= 70 %}
+                The elevated average risk score of <strong>{{ risk_score_summary.avg }}</strong> indicates active
+                threat activity that warrants urgent investigation.
+                {% elif risk_score_summary.avg >= 40 %}
+                The system risk score of <strong>{{ risk_score_summary.avg }}</strong> suggests moderate
+                suspicious activity. Continued monitoring is recommended.
+                {% else %}
+                Current risk levels appear within normal operational bounds. Routine monitoring continues.
+                {% endif %}
+            </div>
+
+            <!-- KPI Strip -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value blue">{{ total_events }}</div>
+                    <div class="kpi-label">Total Events</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">{{ total_alerts }}</div>
+                    <div class="kpi-label">Total Alerts</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value red">{{ critical_alerts | length }}</div>
+                    <div class="kpi-label">Critical / High</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">{{ unique_ips }}</div>
+                    <div class="kpi-label">Unique Source IPs</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value orange">{{ risk_score_summary.avg }}</div>
+                    <div class="kpi-label">Avg Risk Score</div>
+                </div>
+            </div>
+
+            <!-- ── SECTION 1: Event & Severity Breakdown ─────────────────── -->
+            <div class="col2">
+                <div class="col2-card">
+                    <div class="section-header" style="padding: 12px 16px 10px; margin-bottom: 0;">
+                        <span class="section-num">01</span>
+                        <span class="section-title">Event Type Breakdown</span>
+                    </div>
+                    {% if event_type_breakdown %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Event Type</th>
+                                <th class="text-right">Count</th>
+                                <th class="text-right">Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in event_type_breakdown %}
+                            <tr>
+                                <td>{{ row.label.replace("_", " ").title() }}</td>
+                                <td class="text-right">{{ row.count }}</td>
+                                <td class="text-right">
+                                    <span class="bar-wrap"><span class="bar-fill bar-default"
+                                            style="width:{{ row.pct }}%"></span></span>
+                                    {{ row.pct }}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}<div class="empty">No events recorded.</div>{% endif %}
+                </div>
+
+                <div class="col2-card">
+                    <div class="section-header" style="padding: 12px 16px 10px; margin-bottom: 0;">
+                        <span class="section-num">02</span>
+                        <span class="section-title">Severity Distribution</span>
+                    </div>
+                    {% if severity_breakdown %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th class="text-right">Events</th>
+                                <th class="text-right">Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in severity_breakdown %}
+                            <tr>
+                                <td>
+                                    <span class="badge badge-{{ row.label | lower }}">{{ row.label }}</span>
+                                </td>
+                                <td class="text-right">{{ row.count }}</td>
+                                <td class="text-right">
+                                    <span class="bar-wrap"><span class="bar-fill bar-{{ row.label | lower }}"
+                                            style="width:{{ row.pct }}%"></span></span>
+                                    {{ row.pct }}%
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}<div class="empty">No severity data.</div>{% endif %}
+                </div>
+            </div>
+
+            <!-- ── SECTION 3: High & Critical Alerts ─────────────────────── -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-num">03</span>
+                    <span class="section-title">High &amp; Critical Alerts</span>
+                </div>
+                {% if critical_alerts %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:90px">Severity</th>
+                            <th>Alert Type</th>
+                            <th>Details</th>
+                            <th>MITRE Technique</th>
+                            <th class="text-right" style="width:70px">Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in critical_alerts %}
+                        <tr>
+                            <td>
+                                <span class="badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+                            </td>
+                            <td><strong>{{ a.type.replace("_", " ").title() }}</strong></td>
+                            <td style="color:#475569;">{{ a.message }}</td>
+                            <td>
+                                {% if a.mitre_technique %}
+                                <code>{{ a.mitre_technique }}</code>
+                                <span style="color:#94a3b8; font-size:11px;"> {{ a.mitre_tactic }}</span>
+                                {% else %}
+                                <span style="color:#94a3b8;">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <span class="risk-chip risk-{{ a.risk_score }}">{{ a.risk_score }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty">No critical or high alerts detected in this audit window.</div>
+                {% endif %}
+            </div>
+
+            <!-- ── SECTION 4: Top Attacker Sources ───────────────────────── -->
+            <div class="section" style="page-break-before: always;">
+                <div class="section-header">
+                    <span class="section-num">04</span>
+                    <span class="section-title">Top Attacker Sources (Failed Logins)</span>
+                </div>
+                {% if top_attackers %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Source IP</th>
+                            <th>Country / Region</th>
+                            <th class="text-right">Failed Attempts</th>
+                            <th class="text-right">Threat Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ip, count in top_attackers %}
+                        <tr>
+                            <td><code>{{ ip }}</code></td>
+                            <td style="color:#64748b;">
+                                {% for loc, c in location_breakdown %}
+                                {% if loop.first %}{{ loc }}{% endif %}
+                                {% else %}—{% endfor %}
+                            </td>
+                            <td class="text-right"><strong>{{ count }}</strong></td>
+                            <td class="text-right">
+                                {% if count >= 5 %}
+                                <span class="badge badge-critical">Critical</span>
+                                {% elif count >= 3 %}
+                                <span class="badge badge-high">High</span>
+                                {% elif count >= 2 %}
+                                <span class="badge badge-medium">Medium</span>
+                                {% else %}
+                                <span class="badge badge-low">Low</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty">No failed login attempts recorded.</div>
+                {% endif %}
+            </div>
+
+            <!-- ── SECTION 5: GeoIP Threat Origin ────────────────────────── -->
+            <div class="col2">
+                <div class="col2-card">
+                    <div class="section-header" style="padding: 12px 16px 10px; margin-bottom: 0;">
+                        <span class="section-num">05</span>
+                        <span class="section-title">GeoIP Threat Origin</span>
+                    </div>
+                    {% if location_breakdown %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Country / Region</th>
+                                <th class="text-right">Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for country, count in location_breakdown %}
+                            <tr>
+                                <td>{{ country }}</td>
+                                <td class="text-right"><strong>{{ count }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty" style="margin:16px">No external source data.</div>
+                    {% endif %}
+                </div>
+
+                <!-- ── SECTION 6: Privilege Escalation ────────────────────── -->
+                <div class="col2-card">
+                    <div class="section-header" style="padding: 12px 16px 10px; margin-bottom: 0;">
+                        <span class="section-num">06</span>
+                        <span class="section-title">Privilege Escalation (sudo)</span>
+                    </div>
+                    {% if top_sudo %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th class="text-right">Commands</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user, count in top_sudo %}
+                            <tr>
+                                <td><strong>{{ user }}</strong></td>
+                                <td class="text-right">{{ count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty" style="margin:16px">No sudo usage recorded.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ── SECTION 7: MITRE ATT&CK Coverage ──────────────────────── -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-num">07</span>
+                    <span class="section-title">MITRE ATT&amp;CK® Coverage</span>
+                </div>
+                {% if mitre_tactic_freq %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Technique &amp; Tactic</th>
+                            <th class="text-right">Alerts Triggered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tactic, count in mitre_tactic_freq %}
+                        <tr>
+                            <td>
+                                <code style="color:#1d4ed8; background:#eff6ff; padding:2px 6px; border-radius:3px;">
+                                {{ tactic.split("—")[0].strip() }}
+                            </code>
+                                <span style="color:#64748b; margin-left:6px;">{{ tactic.split("—")[1].strip() if "—" in
+                                    tactic else "" }}</span>
+                            </td>
+                            <td class="text-right"><strong>{{ count }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty">No MITRE tactic data available — run the pipeline first.</div>
+                {% endif %}
+            </div>
+
+            <!-- ── Footer ─────────────────────────────────────────────────── -->
+            <div class="report-footer">
+                <span>Report ID: {{ report_id }} &nbsp;·&nbsp; Generated: {{ generated_at }}</span>
+                <span>CONFIDENTIAL — For internal audit and compliance use only.</span>
+            </div>
+
+        </div><!-- /content -->
+    </div><!-- /page -->
+</body>
+
+</html>

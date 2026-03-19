@@ -1,157 +1,158 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Logs</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
-<div class="navbar">
-    <div class="navbar-title">
-        Mini SIEM
-        <span>logs</span>
-    </div>
-    <div class="nav-links">
-        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-        <a href="{{ url_for('logs') }}" class="nav-link nav-link-active">Logs</a>
-        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-    </div>
-</div>
-
-<div class="page-shell">
-        <div class="page-header">
-        <div>
-            <div class="page-title">Normalized Events</div>
-            <p class="page-subtitle">
-                Parsed SSH authentication activity with severity, user and IP context.
-            </p>
+    <div class="navbar">
+        <div class="navbar-title">
+            Mini SIEM
+            <span>logs</span>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <a href="{{ url_for('export_events') }}" class="button button-secondary">Export CSV</a>
-            <div class="pill">
-                <span class="pill-dot"></span>
-                {{ events|length }} events loaded
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+            <a href="{{ url_for('logs') }}" class="nav-link nav-link-active">Logs</a>
+            <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+            <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+            <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+            <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+        </div>
+    </div>
+
+    <div class="page-shell">
+        <div class="page-header">
+            <div>
+                <div class="page-title">Normalized Events</div>
+                <p class="page-subtitle">
+                    Parsed SSH authentication activity with severity, user and IP context.
+                </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a href="{{ url_for('export_events') }}" class="button button-secondary">Export CSV</a>
+                <div class="pill">
+                    <span class="pill-dot"></span>
+                    {{ events|length }} events loaded
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">Log Explorer</div>
-            <div class="card-subtitle">Client‑side filters to quickly slice events</div>
-        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Log Explorer</div>
+                <div class="card-subtitle">Client‑side filters to quickly slice events</div>
+            </div>
 
-        <div class="search-row">
-            <input
-                id="searchText"
-                class="input"
-                type="text"
-                placeholder="Search by user, IP or event type…">
+            <div class="search-row">
+                <input id="searchText" class="input" type="text" placeholder="Search by user, IP or event type…">
 
-            <select id="severityFilter" class="select">
-                <option value="">All severities</option>
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-            </select>
+                <select id="severityFilter" class="select">
+                    <option value="">All severities</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                    <option value="CRITICAL">Critical</option>
+                </select>
 
-            <button class="button-ghost button" type="button" onclick="resetFilters()">
-                Clear filters
-            </button>
-        </div>
+                <button class="button-ghost button" type="button" onclick="resetFilters()">
+                    Clear filters
+                </button>
+            </div>
 
-        <div class="table-wrapper">
-            {% if events %}
-            <table id="logsTable">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Event</th>
-                        <th>User</th>
-                        <th>IP</th>
-                        <th>Severity</th>
-                        <th>Raw log</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for e in events %}
-                    <tr>
-                        <td>{{ e.timestamp }}</td>
-                        <td>{{ e.event_type }}</td>
-                        <td>{{ e.username or "-" }}</td>
-                        <td>{{ e.ip or "-" }}</td>
-                        <td>
-                            {% if e.severity == "LOW" %}
+            <div class="table-wrapper">
+                {% if events %}
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event</th>
+                            <th>User</th>
+                            <th>IP</th>
+                            <th>Location</th>
+                            <th>Severity</th>
+                            <th>Raw log</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in events %}
+                        <tr>
+                            <td>{{ e.timestamp }}</td>
+                            <td>{{ e.event_type }}</td>
+                            <td>{{ e.username or "-" }}</td>
+                            <td>{{ e.ip or "-" }}</td>
+                            <td>{{ e.location or "Unknown" }}</td>
+                            <td>
+                                {% if e.severity == "LOW" %}
                                 <span class="badge badge-low">Low</span>
-                            {% elif e.severity == "MEDIUM" %}
+                                {% elif e.severity == "MEDIUM" %}
                                 <span class="badge badge-medium">Medium</span>
-                            {% elif e.severity == "HIGH" %}
+                                {% elif e.severity == "HIGH" %}
                                 <span class="badge badge-high">High</span>
-                            {% elif e.severity == "CRITICAL" %}
+                                {% elif e.severity == "CRITICAL" %}
                                 <span class="badge badge-critical">Critical</span>
-                            {% else %}
+                                {% else %}
                                 <span class="badge badge-pill">Unknown</span>
-                            {% endif %}
-                        </td>
-                        <td><span class="log-raw" title="{{ e.raw_log }}">{{ e.raw_log }}</span></td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
+                                {% endif %}
+                            </td>
+                            <td><span class="log-raw" title="{{ e.raw_log }}">{{ e.raw_log }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
                 <div class="empty-state">
                     No events have been ingested yet. Run the analysis to populate `events.json`.
                 </div>
-            {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="footer">
+            Parsed using the <span>`parser.log_parser`</span> module.
         </div>
     </div>
 
-    <div class="footer">
-        Parsed using the <span>`parser.log_parser`</span> module.
-    </div>
-</div>
+    <script>
+        const searchInput = document.getElementById('searchText');
+        const severityFilter = document.getElementById('severityFilter');
+        const table = document.getElementById('logsTable');
 
-<script>
-const searchInput = document.getElementById('searchText');
-const severityFilter = document.getElementById('severityFilter');
-const table = document.getElementById('logsTable');
+        function normalize(text) {
+            return (text || '').toString().toLowerCase();
+        }
 
-function normalize(text) {
-    return (text || '').toString().toLowerCase();
-}
+        function applyFilters() {
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr');
+            const q = normalize(searchInput.value);
+            const sev = severityFilter.value;
 
-function applyFilters() {
-    if (!table) return;
-    const rows = table.querySelectorAll('tbody tr');
-    const q = normalize(searchInput.value);
-    const sev = severityFilter.value;
+            rows.forEach(row => {
+                const user = normalize(row.children[2].textContent);
+                const ip = normalize(row.children[3].textContent);
+                const type = normalize(row.children[1].textContent);
+                const rowSev = row.children[4].textContent.trim().toUpperCase();
 
-    rows.forEach(row => {
-        const user = normalize(row.children[2].textContent);
-        const ip = normalize(row.children[3].textContent);
-        const type = normalize(row.children[1].textContent);
-        const rowSev = row.children[4].textContent.trim().toUpperCase();
+                const matchesText = !q || user.includes(q) || ip.includes(q) || type.includes(q);
+                const matchesSev = !sev || rowSev === sev;
 
-        const matchesText = !q || user.includes(q) || ip.includes(q) || type.includes(q);
-        const matchesSev = !sev || rowSev === sev;
+                row.style.display = (matchesText && matchesSev) ? '' : 'none';
+            });
+        }
 
-        row.style.display = (matchesText && matchesSev) ? '' : 'none';
-    });
-}
+        function resetFilters() {
+            searchInput.value = '';
+            severityFilter.value = '';
+            applyFilters();
+        }
 
-function resetFilters() {
-    searchInput.value = '';
-    severityFilter.value = '';
-    applyFilters();
-}
-
-searchInput.addEventListener('input', applyFilters);
-severityFilter.addEventListener('change', applyFilters);
-</script>
+        searchInput.addEventListener('input', applyFilters);
+        severityFilter.addEventListener('change', applyFilters);
+    </script>
 
 </body>
+
 </html>
