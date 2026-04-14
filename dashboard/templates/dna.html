@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alert DNA — SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .dna-card {
+            background: radial-gradient(circle at top left, #111827, #020617 65%);
+            border-radius: 16px;
+            border: 1px solid rgba(75, 85, 99, 0.6);
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .dna-card:hover { border-color: rgba(16, 185, 129, 0.5); }
+        .dna-card.critical { border-left: 3px solid #ef4444; }
+        .dna-card.high     { border-left: 3px solid #f97316; }
+        .dna-card.medium   { border-left: 3px solid #eab308; }
+        .dna-card.low      { border-left: 3px solid #22c55e; }
+
+        .dna-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .dna-hash {
+            font-family: ui-monospace, monospace;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            color: #10b981;
+            text-shadow: 0 0 20px rgba(16,185,129,0.4);
+        }
+        .dna-label {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-top: 4px;
+        }
+        .dna-count {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dna-count-num {
+            font-size: 28px;
+            font-weight: 700;
+            color: #e5e7eb;
+        }
+        .dna-alerts-list {
+            margin-top: 12px;
+            border-top: 1px solid rgba(55,65,81,0.6);
+            padding-top: 10px;
+        }
+        .dna-alert-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px dashed rgba(55,65,81,0.4);
+            font-size: 12px;
+            color: #9ca3af;
+            gap: 10px;
+        }
+        .dna-alert-row:last-child { border-bottom: none; }
+        .dna-alert-msg { flex:1; color: #d1d5db; }
+        .pattern-explainer {
+            padding: 10px 14px;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #6ee7b7;
+            margin-bottom: 10px;
+        }
+        .novel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: linear-gradient(90deg, rgba(16,185,129,0.2), rgba(79,70,229,0.15));
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        SIEM
+        <span>DNA</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+        <a href="{{ url_for('narrative') }}" class="nav-link">Narratives</a>
+        <a href="{{ url_for('reputation') }}" class="nav-link">Reputation</a>
+        <a href="{{ url_for('dna_view') }}" class="nav-link nav-link-active">DNA</a>
+        <a href="{{ url_for('simulator') }}" class="nav-link">Simulator</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Alert DNA Fingerprinting</div>
+            <p class="page-subtitle">
+                Alerts grouped by behavioral pattern hash — not by IP or username.
+                Two different IPs running the same attack get the same DNA.
+            </p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span class="novel-badge">🧬 Novel Feature · Patent P2</span>
+            <div class="pill">
+                <span class="pill-dot" style="background:#10b981;"></span>
+                {{ dna_groups|length }} unique pattern(s)
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-muted" style="margin-bottom:20px;">
+        <div class="card-title">What is Alert DNA?</div>
+        <p style="font-size:13px; color:#9ca3af; margin-top:8px; line-height:1.7;">
+            Traditional SIEMs correlate alerts by <em>entity</em> (same IP, same user). Alert DNA fingerprinting
+            correlates alerts by <em>behavioral pattern</em>: time-of-day bucket, event type, MITRE tactic, severity,
+            and origin (internal vs external). Two unrelated attackers using the same technique share the same DNA —
+            enabling cross-entity pattern detection impossible in standard SIEMs.
+        </p>
+    </div>
+
+    {% if dna_groups %}
+        {% for g in dna_groups %}
+        <div class="dna-card {{ g.severity | lower }}">
+            <div class="dna-header">
+                <div>
+                    <div class="dna-hash">DNA: {{ g.dna }}</div>
+                    <div class="dna-label">{{ g.description }}</div>
+                </div>
+                <div class="dna-count">
+                    <div>
+                        <div class="dna-count-num">{{ g.count }}</div>
+                        <div style="font-size:11px; color:#6b7280;">alert{{ 's' if g.count != 1 else '' }} match</div>
+                    </div>
+                    {% if g.severity == "LOW" %}
+                        <span class="badge badge-low">{{ g.severity }}</span>
+                    {% elif g.severity == "MEDIUM" %}
+                        <span class="badge badge-medium">{{ g.severity }}</span>
+                    {% elif g.severity == "HIGH" %}
+                        <span class="badge badge-high">{{ g.severity }}</span>
+                    {% elif g.severity == "CRITICAL" %}
+                        <span class="badge badge-critical">{{ g.severity }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if g.count > 1 %}
+            <div class="pattern-explainer">
+                🧬 <strong>{{ g.count }} alerts share this behavioral DNA</strong> — same attack pattern from potentially different entities.
+                Cross-entity correlation active.
+            </div>
+            {% endif %}
+
+            <div class="dna-alerts-list">
+                {% for a in g.alerts[:5] %}
+                <div class="dna-alert-row">
+                    <span class="dna-alert-msg">{{ a.message }}</span>
+                    <span style="font-family:monospace; font-size:11px; color:#4b5563;">{{ a.type }}</span>
+                    {% if a.mitre_technique %}
+                    <span class="technique-tag" style="font-size:10px; padding:2px 7px; border-radius:999px; border:1px solid rgba(99,102,241,0.4); color:#a5b4fc; font-family:monospace;">{{ a.mitre_technique }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if g.alerts|length > 5 %}
+                <div style="font-size:11px; color:#6b7280; padding-top:6px; text-align:center;">
+                    + {{ g.alerts|length - 5 }} more alerts with same DNA
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="empty-state">
+                No DNA fingerprints generated yet. Run the pipeline to fingerprint alerts.
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        Powered by <span>`analyzer.dna_engine`</span> — Patent Feature P2.
+    </div>
+</div>
+</body>
+</html>

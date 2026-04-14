@@ -1,0 +1,55 @@
+{
+  "1": {
+    "verdicts": [
+      {
+        "verdict": "TRUE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:34.102760+00:00"
+      },
+      {
+        "verdict": "TRUE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:35.721266+00:00"
+      },
+      {
+        "verdict": "FALSE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:37.047732+00:00"
+      },
+      {
+        "verdict": "NEEDS_INVESTIGATION",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:37.812225+00:00"
+      },
+      {
+        "verdict": "TRUE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:40.804201+00:00"
+      },
+      {
+        "verdict": "TRUE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:47.828036+00:00"
+      },
+      {
+        "verdict": "FALSE_POSITIVE",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:48.897221+00:00"
+      },
+      {
+        "verdict": "NEEDS_INVESTIGATION",
+        "analyst": "analyst",
+        "timestamp": "2026-04-13T04:44:49.621504+00:00"
+      }
+    ],
+    "dna": "",
+    "latest_verdict": "NEEDS_INVESTIGATION",
+    "latest_ts": "2026-04-13T04:44:49.621504+00:00"
+  },
+  "dna_": {
+    "tp": 4,
+    "fp": 2,
+    "ni": 2,
+    "net_modifier": 4
+  }
+}

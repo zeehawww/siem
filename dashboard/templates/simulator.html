@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>What-If Simulator — SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .sim-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) { .sim-panel { grid-template-columns: 1fr; } }
+
+        .sim-form { display: flex; flex-direction: column; gap: 16px; }
+        .field-group { display: flex; flex-direction: column; gap: 6px; }
+        .field-label { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.12em; }
+
+        .technique-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .technique-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(55,65,81,0.7);
+            background: rgba(15,23,42,0.6);
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .technique-option:hover, .technique-option.selected {
+            border-color: rgba(79,70,229,0.7);
+            background: rgba(79,70,229,0.1);
+        }
+        .technique-option input[type="radio"] { accent-color: #6366f1; }
+        .technique-id {
+            font-family: monospace;
+            font-size: 11px;
+            color: #a5b4fc;
+            background: rgba(99,102,241,0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .technique-name { font-size: 13px; color: #e5e7eb; font-weight: 500; }
+        .technique-tactic { font-size: 11px; color: #6b7280; }
+
+        #results-panel { min-height: 200px; }
+        .result-alert {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(55,65,81,0.6);
+            background: rgba(15,23,42,0.8);
+            margin-bottom: 10px;
+        }
+        .result-alert.critical { border-left: 3px solid #ef4444; }
+        .result-alert.high     { border-left: 3px solid #f97316; }
+        .result-alert.medium   { border-left: 3px solid #eab308; }
+        .result-alert.low      { border-left: 3px solid #22c55e; }
+
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .result-type { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+        .result-msg  { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+
+        .explain-block {
+            background: rgba(79,70,229,0.08);
+            border: 1px solid rgba(79,70,229,0.25);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .explain-title { font-size: 11px; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+        .explain-factor {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+            color: #cbd5e1;
+            padding: 3px 0;
+        }
+        .weight-high   { color: #f87171; }
+        .weight-medium { color: #fbbf24; }
+        .weight-low    { color: #86efac; }
+        .counterfactual { color: #6b7280; font-style: italic; }
+
+        .detect-banner {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .detect-yes { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.5); color: #6ee7b7; }
+        .detect-no  { background: rgba(220,38,38,0.15);  border: 1px solid rgba(220,38,38,0.5);  color: #fca5a5; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .novel-badge {
+            display: inline-flex; gap: 5px; padding: 4px 10px; border-radius: 999px;
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+            background: linear-gradient(90deg, rgba(245,158,11,0.2), rgba(239,68,68,0.15));
+            border: 1px solid rgba(245,158,11,0.5); color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-title">
+        SIEM
+        <span>Simulator</span>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
+        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
+        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
+        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
+        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+        <a href="{{ url_for('narrative') }}" class="nav-link">Narratives</a>
+        <a href="{{ url_for('reputation') }}" class="nav-link">Reputation</a>
+        <a href="{{ url_for('dna_view') }}" class="nav-link">DNA</a>
+        <a href="{{ url_for('simulator') }}" class="nav-link nav-link-active">Simulator</a>
+    </div>
+</div>
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">What-If Attack Simulator</div>
+            <p class="page-subtitle">
+                Pick a MITRE ATT&CK technique and test whether your detection rules would catch it — before a real attack happens.
+            </p>
+        </div>
+        <span class="novel-badge">⚡ Novel Feature · Patent P2</span>
+    </div>
+
+    <div class="card card-muted" style="margin-bottom:20px;">
+        <div class="card-title">How It Works</div>
+        <p style="font-size:13px; color:#9ca3af; margin-top:8px; line-height:1.7;">
+            Choose an attack technique, set a simulated target, and run the simulation. The system generates synthetic events
+            matching that technique and runs them through the detection engine in <strong>simulation mode</strong> —
+            without affecting live state or persisted alerts. You'll see exactly which rules fire, the alert types generated,
+            and WHY each alert was triggered (explainability). Think of it as a built-in Breach &amp; Attack Simulation (BAS).
+        </p>
+    </div>
+
+    <div class="sim-panel">
+        <!-- Configuration panel -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Simulation Config</div>
+                <div class="card-subtitle">Select technique + target</div>
+            </div>
+
+            <div class="sim-form" id="simForm">
+                <div class="field-group">
+                    <div class="field-label">MITRE ATT&CK Technique</div>
+                    <div class="technique-list">
+                        {% for t in mitre_tactics %}
+                        <label class="technique-option" onclick="selectTechnique(this, '{{ t.id }}')">
+                            <input type="radio" name="technique" value="{{ t.id }}" {% if loop.first %}checked{% endif %}>
+                            <div style="flex:1;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="technique-id">{{ t.id }}</span>
+                                    <span class="technique-name">{{ t.name }}</span>
+                                </div>
+                                <div class="technique-tactic">{{ t.tactic }}</div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <div class="field-label">Simulated Target User</div>
+                    <input class="input" type="text" id="targetUser" value="victim_user" style="border-radius:8px; width:100%;">
+                </div>
+
+                <div class="field-group">
+                    <div class="field-label">Simulated Source IP</div>
+                    <input class="input" type="text" id="targetIp" value="198.51.100.99" style="border-radius:8px; width:100%;">
+                </div>
+
+                <div class="field-group">
+                    <div class="field-label">Event Count (for brute-force techniques)</div>
+                    <input class="input" type="number" id="eventCount" value="5" min="1" max="20" style="border-radius:8px; width:100%;">
+                </div>
+
+                <button class="button" onclick="runSimulation()" id="runBtn">
+                    ⚡ Run Simulation
+                </button>
+            </div>
+        </div>
+
+        <!-- Results panel -->
+        <div class="card" id="results-panel">
+            <div class="card-header">
+                <div class="card-title">Simulation Results</div>
+                <div class="card-subtitle" id="results-subtitle">Configure and run a simulation</div>
+            </div>
+            <div id="results-content">
+                <div class="empty-state">
+                    Results will appear here after you run a simulation.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by <span>`analyzer.detection_engine` (simulation_mode=True)</span> — Patent Feature P2.
+    </div>
+</div>
+
+<script>
+    let selectedTechnique = "{{ mitre_tactics[0].id }}";
+
+    function selectTechnique(el, tid) {
+        document.querySelectorAll('.technique-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedTechnique = tid;
+    }
+
+    // Mark first option as selected on load
+    document.querySelectorAll('.technique-option')[0]?.classList.add('selected');
+
+    async function runSimulation() {
+        const btn = document.getElementById('runBtn');
+        btn.textContent = '⏳ Simulating...';
+        btn.disabled = true;
+
+        const sub = document.getElementById('results-subtitle');
+        sub.textContent = 'Running...';
+
+        document.getElementById('results-content').innerHTML = '<div class="loading">⚙️ Running detection engine in simulation mode...</div>';
+
+        const payload = {
+            technique_id: selectedTechnique,
+            target_user:  document.getElementById('targetUser').value || 'victim_user',
+            target_ip:    document.getElementById('targetIp').value || '198.51.100.99',
+            event_count:  parseInt(document.getElementById('eventCount').value) || 5,
+        };
+
+        try {
+            const res = await fetch('/api/simulate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            renderResults(data);
+        } catch (e) {
+            document.getElementById('results-content').innerHTML = '<div class="empty-state">Simulation failed. Check console.</div>';
+        }
+
+        btn.textContent = '⚡ Run Simulation';
+        btn.disabled = false;
+    }
+
+    function renderResults(data) {
+        const sub = document.getElementById('results-subtitle');
+        sub.textContent = `${data.events_tested} synthetic events → ${data.alerts_fired} alert(s) generated`;
+
+        let html = '';
+
+        // Detection banner
+        if (data.would_detect) {
+            html += `<div class="detect-banner detect-yes">✅ Your rules WOULD detect this attack (${data.alerts_fired} alert${data.alerts_fired !== 1 ? 's' : ''} fired)</div>`;
+        } else {
+            html += `<div class="detect-banner detect-no">❌ Your rules would NOT detect this attack — coverage gap identified!</div>`;
+        }
+
+        if (data.alerts.length === 0) {
+            html += '<div class="empty-state" style="margin-top:10px;">No alerts fired. Consider adding detection rules for this technique.</div>';
+        }
+
+        for (const a of data.alerts) {
+            const sev = (a.severity || '').toLowerCase();
+            html += `
+            <div class="result-alert ${sev}">
+                <div class="result-header">
+                    <span class="result-type">${a.type}</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span class="badge badge-${sev}">${a.severity}</span>
+                        <span class="risk-pill" style="padding:3px 8px;border-radius:999px;font-size:11px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;">Risk: ${a.risk_score}</span>
+                    </div>
+                </div>
+                <div class="result-msg">${a.message}</div>
+                <div style="font-size:11px;color:#6b7280;margin-bottom:8px;">MITRE: ${a.mitre_technique} — ${a.mitre_tactic}</div>
+            `;
+
+            // Explainability block
+            if (a.explanation) {
+                html += `<div class="explain-block"><div class="explain-title">Why this alert?</div>`;
+                for (const f of (a.explanation.factors || [])) {
+                    const wc = f.weight === 'high' ? 'weight-high' : f.weight === 'medium' ? 'weight-medium' : 'weight-low';
+                    const icon = f.weight === 'high' ? '🔴' : f.weight === 'medium' ? '🟡' : '🟢';
+                    html += `<div class="explain-factor"><span class="${wc}">${icon}</span><span>${f.factor}</span></div>`;
+                }
+                if (a.explanation.counterfactuals?.length) {
+                    html += `<div class="explain-title" style="margin-top:8px;">What would escalate this?</div>`;
+                    for (const cf of a.explanation.counterfactuals) {
+                        html += `<div class="explain-factor counterfactual"><span>💭</span><span>${cf}</span></div>`;
+                    }
+                }
+                if (a.explanation.severity_rationale) {
+                    html += `<div style="font-size:11px;color:#6b7280;margin-top:8px;padding-top:6px;border-top:1px dashed rgba(55,65,81,0.5);">${a.explanation.severity_rationale}</div>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+
+        document.getElementById('results-content').innerHTML = html;
+    }
+</script>
+
+</body>
+</html>

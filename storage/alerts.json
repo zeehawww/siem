@@ -1,155 +1,38 @@
 [
   {
-    "timestamp": "2026-02-25T06:34:43.779977Z",
-    "type": "BRUTE_FORCE",
-    "severity": "HIGH",
-    "message": "Multiple failed logins from 192.168.1.10",
+    "timestamp": "2026-04-13T07:34:14.953293Z",
+    "type": "AFTER_HOURS_LOGIN",
+    "severity": "MEDIUM",
+    "message": "Login by azam from 127.0.0.1 at hour 08:xx (outside business hours) (\u00d740 occurrences)",
     "event": {
-      "timestamp": "Jan 27 10:22:10",
-      "hour": 10,
-      "event_type": "FAILED_LOGIN",
-      "username": "admin",
-      "ip": "192.168.1.10",
-      "location": "Internal",
-      "severity": "MEDIUM",
-      "raw_log": "Jan 27 10:22:10 kali sshd[1234]: Failed password for invalid user admin from 192.168.1.10 port 22"
-    },
-    "count": 1
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.780223Z",
-    "type": "COMPROMISED_ACCOUNT",
-    "severity": "CRITICAL",
-    "message": "Successful login after failures from 192.168.1.10",
-    "event": {
-      "timestamp": "Jan 27 10:22:15",
-      "hour": 10,
+      "timestamp": "Oct 2 17:22:00",
+      "hour": 17,
       "event_type": "SUCCESS_LOGIN",
-      "username": "user",
-      "ip": "192.168.1.10",
+      "username": "azam",
+      "ip": "127.0.0.1",
       "location": "Internal",
       "severity": "LOW",
-      "raw_log": "Jan 27 10:22:15 kali sshd[1234]: Accepted password for user from 192.168.1.10 port 22"
+      "raw_log": "Oct 2 17:22:00 localsys sshd[0]: Accepted password for azam from 127.0.0.1 port 0",
+      "source": "real_system"
     },
-    "count": 1
+    "count": 40
   },
   {
-    "timestamp": "2026-02-25T06:34:43.780346Z",
-    "type": "PRIV_ESC",
-    "severity": "HIGH",
-    "message": "Sudo used by user",
-    "event": {
-      "timestamp": "Jan 27 10:23:01",
-      "hour": 10,
-      "event_type": "SUDO_USAGE",
-      "username": "user",
-      "ip": null,
-      "location": "Local",
-      "severity": "HIGH",
-      "raw_log": "Jan 27 10:23:01 kali sudo: user : TTY=pts/0 ; COMMAND=/bin/ls"
-    },
-    "count": 1
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.780470Z",
+    "timestamp": "2026-04-13T07:34:14.953695Z",
     "type": "ROOT_LOGIN",
     "severity": "CRITICAL",
-    "message": "Root login detected from 10.0.0.5",
+    "message": "Root login detected from 127.0.0.1",
     "event": {
-      "timestamp": "Jan 27 10:24:01",
-      "hour": 10,
+      "timestamp": "Mar 2 00:47:00",
+      "hour": 0,
       "event_type": "SUCCESS_LOGIN",
       "username": "root",
-      "ip": "10.0.0.5",
+      "ip": "127.0.0.1",
       "location": "Internal",
       "severity": "LOW",
-      "raw_log": "Jan 27 10:24:01 kali sshd[2222]: Accepted password for root from 10.0.0.5 port 22"
+      "raw_log": "Mar 2 00:47:00 localsys sshd[0]: Accepted password for root from 127.0.0.1 port 0",
+      "source": "real_system"
     },
     "count": 1
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.780595Z",
-    "type": "NEW_IP_FOR_USER",
-    "severity": "MEDIUM",
-    "message": "User developer logged in from new IP 10.20.30.40 (previously seen: 172.16.0.99)",
-    "event": {
-      "timestamp": "Jan 27 12:05:00",
-      "hour": 12,
-      "event_type": "SUCCESS_LOGIN",
-      "username": "developer",
-      "ip": "10.20.30.40",
-      "location": "Internal",
-      "severity": "LOW",
-      "raw_log": "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22"
-    },
-    "count": 1
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.780727Z",
-    "type": "PRIV_ESC",
-    "severity": "HIGH",
-    "message": "Sudo used by backup (\u00d710 occurrences)",
-    "event": {
-      "timestamp": "Jan 27 11:01:00",
-      "hour": 11,
-      "event_type": "SUDO_USAGE",
-      "username": "backup",
-      "ip": null,
-      "location": "Local",
-      "severity": "HIGH",
-      "raw_log": "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id"
-    },
-    "count": 10
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.780864Z",
-    "type": "BRUTE_FORCE",
-    "severity": "HIGH",
-    "message": "Multiple failed logins from 203.0.113.42 (\u00d719 occurrences)",
-    "event": {
-      "timestamp": "Jan 27 11:00:10",
-      "hour": 11,
-      "event_type": "FAILED_LOGIN",
-      "username": "admin",
-      "ip": "203.0.113.42",
-      "location": "Russia",
-      "severity": "MEDIUM",
-      "raw_log": "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22"
-    },
-    "count": 19
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.781012Z",
-    "type": "COMPROMISED_ACCOUNT",
-    "severity": "CRITICAL",
-    "message": "Successful login after failures from 203.0.113.42 (\u00d77 occurrences)",
-    "event": {
-      "timestamp": "Jan 27 11:00:15",
-      "hour": 11,
-      "event_type": "SUCCESS_LOGIN",
-      "username": "backup",
-      "ip": "203.0.113.42",
-      "location": "Russia",
-      "severity": "LOW",
-      "raw_log": "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22"
-    },
-    "count": 7
-  },
-  {
-    "timestamp": "2026-02-25T06:34:43.781286Z",
-    "type": "PRIV_ESC",
-    "severity": "HIGH",
-    "message": "Sudo used by developer (\u00d78 occurrences)",
-    "event": {
-      "timestamp": "Jan 27 12:01:00",
-      "hour": 12,
-      "event_type": "SUDO_USAGE",
-      "username": "developer",
-      "ip": null,
-      "location": "Local",
-      "severity": "HIGH",
-      "raw_log": "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow"
-    },
-    "count": 8
   }
 ]

@@ -1,122 +1,420 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Mini SIEM</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel SIEM — Security Operations Center</title>
+    <meta name="description" content="Professional Security Information and Event Management platform with real-time log ingestion, threat detection, behavioral analytics, and automated incident narratives.">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .stat-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .stat-card:hover {
+            border-color: rgba(99,102,241,0.3);
+            transform: translateY(-1px);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+        }
+        .stat-card.s-critical::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+        .stat-card.s-high::before     { background: linear-gradient(90deg, transparent, #f97316, transparent); }
+        .stat-card.s-medium::before   { background: linear-gradient(90deg, transparent, #eab308, transparent); }
+        .stat-card.s-green::before    { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+        .stat-card.s-indigo::before   { background: linear-gradient(90deg, transparent, #6366f1, transparent); }
+
+        .stat-num {
+            font-size: 38px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; letter-spacing: 0.03em; }
+        .stat-icon { font-size: 22px; margin-bottom: 10px; opacity: 0.8; }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+            margin-top: 10px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .feature-item:hover {
+            border-color: rgba(99,102,241,0.4);
+            background: rgba(99,102,241,0.06);
+            transform: translateX(2px);
+        }
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .fi-blue   { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
+        .fi-purple { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); }
+        .fi-green  { background: rgba(34,197,94,0.12);  border: 1px solid rgba(34,197,94,0.3); }
+        .fi-orange { background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); }
+        .fi-red    { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3); }
+        .fi-teal   { background: rgba(20,184,166,0.12); border: 1px solid rgba(20,184,166,0.3); }
+
+        .feature-content h3 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+        .feature-content p  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .feature-content .tag-novel {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(99,102,241,0.2);
+            border: 1px solid rgba(99,102,241,0.4);
+            color: #a5b4fc;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .pipeline-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .pipeline-step:last-child { border-bottom: none; }
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(99,102,241,0.2);
+            border: 1px solid rgba(99,102,241,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #a5b4fc;
+            flex-shrink: 0;
+        }
+        .step-content strong { color: var(--text); }
+        .step-content span   { color: var(--text-muted); font-size: 12px; }
+
+        .live-banner {
+            background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(16,185,129,0.04));
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .live-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .live-banner strong { color: #86efac; }
+
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+            50%       { box-shadow: 0 0 20px 4px rgba(99,102,241,0.2); }
+        }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-    <div class="navbar-title">
-        Mini SIEM
-        <span>mini project</span>
-    </div>
-    <div class="nav-links">
-        <a href="{{ url_for('home') }}" class="nav-link nav-link-active">Overview</a>
-        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-    </div>
-</div>
+{% set active_page = 'home' %}
+{% include '_navbar.html' %}
 
 <div class="page-shell">
 
+    <!-- Live data banner -->
+    <div class="live-banner">
+        <div class="live-banner-left">
+            <span style="font-size:20px;">🍎</span>
+            <div>
+                <strong>macOS System Logs Connected</strong>
+                <span style="color:var(--text-muted);"> — This SIEM ingests real authentication events from your machine's ASL database, login history (wtmp), and Unified Log.</span>
+            </div>
+        </div>
+        <form action="{{ url_for('ingest_real') }}" method="POST" style="flex-shrink:0;">
+            <input type="hidden" name="mode" value="real_only">
+            <input type="hidden" name="lookback_hours" value="168">
+            <button class="button button-green" type="submit" style="font-size:12px; padding:8px 16px;">
+                ⚡ Ingest Live Data
+            </button>
+        </form>
+    </div>
+
+    <!-- Page header -->
     <div class="page-header">
         <div>
-            <div class="page-title">Security Operations Snapshot</div>
+            <div class="page-title">Security Operations Center</div>
             <p class="page-subtitle">
-                End‑to‑end mini SIEM: ingest simulated auth logs, normalize events,
-                run detection logic and visualize alerts.
+                Real-time threat detection from live macOS system events — no mock data required.
+                MITRE ATT&amp;CK mapped alerts with explainability, behavioral analytics, and incident narratives.
             </p>
         </div>
         <div class="pill">
             <span class="pill-dot"></span>
-            Live from sample log dataset
+            System Active
         </div>
     </div>
 
+    <!-- Key metrics row -->
+    <div class="grid grid-4" style="margin-bottom:24px;" id="stats-grid">
+        <!-- Will be filled by JS from API, fallback to static -->
+        <div class="stat-card s-indigo">
+            <div class="stat-icon">📋</div>
+            <div class="stat-num" id="stat-events">—</div>
+            <div class="stat-label">Total Events Ingested</div>
+        </div>
+        <div class="stat-card s-critical">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-num critical" id="stat-alerts">—</div>
+            <div class="stat-label">Active Alerts</div>
+        </div>
+        <div class="stat-card s-high">
+            <div class="stat-icon">🔐</div>
+            <div class="stat-num high" id="stat-failed">—</div>
+            <div class="stat-label">Failed Login Attempts</div>
+        </div>
+        <div class="stat-card s-green">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-num green" id="stat-ips">—</div>
+            <div class="stat-label">Unique Source IPs</div>
+        </div>
+    </div>
+
+    <!-- Hero grid: features + pipeline -->
     <div class="hero">
         <div class="hero-text">
-            <h1>From raw SSH logs to actionable security insights.</h1>
+            <h1>From system logs to<br>actionable threat intelligence.</h1>
             <p>
-                This dashboard walks through the typical SIEM pipeline:
-                log collection, parsing &amp; enrichment, rule‑based detection
-                and analyst‑friendly visualization.
+                A full SIEM pipeline — collect, parse, detect, correlate and respond —
+                running on your real macOS auth events with advanced novel engines that rival enterprise solutions.
             </p>
 
-            <div class="hero-highlights">
-                <div class="hero-highlight">Noise reduction (alert deduplication)</div>
-                <div class="hero-highlight">Behavior analytics (new IP for user)</div>
-                <div class="hero-highlight">Compliance reporting</div>
-                <div class="hero-highlight">Attack chain correlation</div>
+            <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('live_logs') }}" class="button">⚡ Ingest Real Logs</a>
+                <a href="{{ url_for('alerts') }}" class="button button-secondary">View Alerts →</a>
             </div>
 
-            <div style="margin-top: 18px; display:flex; gap:10px; flex-wrap:wrap;">
-                <form action="{{ url_for('logs') }}">
-                    <button class="button" type="submit">
-                        View normalized events
-                    </button>
-                </form>
-                <form action="{{ url_for('analysis') }}">
-                    <button class="button button-secondary" type="submit">
-                        Open detection overview
-                    </button>
-                </form>
-            </div>
-
-            <div class="home-container" style="margin-top: 22px;">
-                <div class="home-card" onclick="location.href='{{ url_for('logs') }}'">
-                    <h2>Log Explorer</h2>
-                    <p>Search, filter, and export events to CSV.</p>
-                    <small>Backed by `collector` and `parser` modules.</small>
-                </div>
-                <div class="home-card" onclick="location.href='{{ url_for('analysis') }}'">
-                    <h2>Detection &amp; Trends</h2>
-                    <p>Metrics, severity chart, re‑run pipeline, simulate new events.</p>
-                    <small>Uses the rule‑based `detection_engine`.</small>
-                </div>
-                <div class="home-card" onclick="location.href='{{ url_for('correlation') }}'">
-                    <h2>Attack Chain</h2>
-                    <p>Correlate events by IP or user — see the attack timeline.</p>
-                    <small>Visualize failed → success → sudo progression.</small>
-                </div>
-                <div class="home-card" onclick="location.href='{{ url_for('compliance') }}'">
-                    <h2>Compliance Report</h2>
-                    <p>Audit-ready summary: failed logins, sudo usage, critical alerts.</p>
-                    <small>One-click export for compliance documentation.</small>
-                </div>
+            <!-- Feature grid -->
+            <div class="feature-grid">
+                <a href="{{ url_for('logs') }}" class="feature-item">
+                    <div class="feature-icon fi-blue">📋</div>
+                    <div class="feature-content">
+                        <h3>Log Explorer</h3>
+                        <p>Searchable, filterable normalized events with CSV export.</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('analysis') }}" class="feature-item">
+                    <div class="feature-icon fi-indigo" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);">📊</div>
+                    <div class="feature-content">
+                        <h3>Detection & Trends</h3>
+                        <p>Severity breakdown, top attackers, event-type metrics.</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('alerts') }}" class="feature-item">
+                    <div class="feature-icon fi-red">🔔</div>
+                    <div class="feature-content">
+                        <h3>Alert Queue</h3>
+                        <p>MITRE-mapped alerts with XAI explainability & confidence decay.</p>
+                        <span class="tag-novel">Novel</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('narrative') }}" class="feature-item">
+                    <div class="feature-icon fi-purple">📖</div>
+                    <div class="feature-content">
+                        <h3>Threat Narratives</h3>
+                        <p>Auto-generated plain-English attack stories per entity.</p>
+                        <span class="tag-novel">Novel</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('reputation') }}" class="feature-item">
+                    <div class="feature-icon fi-orange">🔥</div>
+                    <div class="feature-content">
+                        <h3>Reputation Heat Score</h3>
+                        <p>Persistent behavioral reputation built from observed alerts.</p>
+                        <span class="tag-novel">Novel</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('dna_view') }}" class="feature-item">
+                    <div class="feature-icon fi-teal">🧬</div>
+                    <div class="feature-content">
+                        <h3>Alert DNA Fingerprinting</h3>
+                        <p>Groups alerts by behavioral pattern rather than entity identity.</p>
+                        <span class="tag-novel">Novel</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('correlation') }}" class="feature-item">
+                    <div class="feature-icon fi-blue">🔗</div>
+                    <div class="feature-content">
+                        <h3>Attack Chain</h3>
+                        <p>Visualize brute-force → compromise → privilege escalation chains.</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('simulator') }}" class="feature-item">
+                    <div class="feature-icon fi-orange">🎯</div>
+                    <div class="feature-content">
+                        <h3>What-If Simulator</h3>
+                        <p>Test detection coverage against any MITRE ATT&CK technique.</p>
+                        <span class="tag-novel">Novel</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('compliance') }}" class="feature-item">
+                    <div class="feature-icon fi-green">📑</div>
+                    <div class="feature-content">
+                        <h3>Compliance Report</h3>
+                        <p>Audit-ready summaries with one-click PDF/CSV export.</p>
+                    </div>
+                </a>
             </div>
         </div>
 
+        <!-- Right column -->
         <div class="hero-aside">
             <div class="card">
-                <div class="hero-aside-title">Pipeline Stages</div>
-                <ul class="timeline">
-                    <li><span class="severity-dot low"></span><strong>Collect</strong> – read raw SSH auth logs from `logs/simulated_auth.log`.</li>
-                    <li><span class="severity-dot medium"></span><strong>Parse</strong> – normalize into JSON events with timestamp, user, IP &amp; type.</li>
-                    <li><span class="severity-dot.high"></span><strong>Detect</strong> – apply rules such as brute‑force and sudo usage.</li>
-                    <li><span class="severity-dot critical"></span><strong>Alert</strong> – surface notable activity with severity labels.</li>
-                </ul>
+                <div class="hero-aside-title">SIEM Pipeline Stages</div>
+                <div class="pipeline-steps">
+                    <div class="pipeline-step">
+                        <div class="step-num">1</div>
+                        <div class="step-content"><strong>Collect</strong><br><span>macOS ASL, wtmp, Unified Log &amp; UDP syslog</span></div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">2</div>
+                        <div class="step-content"><strong>Parse</strong><br><span>Normalize to JSON: timestamp, user, IP, type</span></div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">3</div>
+                        <div class="step-content"><strong>Detect</strong><br><span>Rule engine with UEBA, MITRE mapping, decay</span></div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">4</div>
+                        <div class="step-content"><strong>Enrich</strong><br><span>DNA fingerprinting &amp; reputation scoring</span></div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">5</div>
+                        <div class="step-content"><strong>Narrate</strong><br><span>Auto-generate plain-English attack stories</span></div>
+                    </div>
+                    <div class="pipeline-step">
+                        <div class="step-num">6</div>
+                        <div class="step-content"><strong>Respond</strong><br><span>Analyst feedback loop adjusts future confidence</span></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="card card-muted">
-                <div class="hero-aside-title">How to showcase</div>
-                <p style="font-size:13px; color:#9ca3af; margin-bottom:10px;">
-                    1) Explain the architecture modules.<br>
-                    2) Show Logs, Analysis, Alerts (with deduplication &amp; behavior analytics).<br>
-                    3) Open Attack Chain, pick an IP, show the event timeline.<br>
-                    4) Open Compliance, show audit-ready report and export.
-                </p>
+            <div class="card card-muted" style="border-style:solid;">
+                <div class="hero-aside-title">Real Data Sources</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+                        <span style="font-size:18px;">🍎</span>
+                        <div>
+                            <div style="font-weight:600; color:var(--text);">macOS ASL Database</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Auth events via <code>syslog -k Facility auth</code></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+                        <span style="font-size:18px;">📋</span>
+                        <div>
+                            <div style="font-weight:600; color:var(--text);">Login History (wtmp)</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Console &amp; TTY sessions via <code>last -w</code></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+                        <span style="font-size:18px;">📡</span>
+                        <div>
+                            <div style="font-weight:600; color:var(--text);">Network Syslog Listener</div>
+                            <div style="font-size:11px; color:var(--text-muted);">UDP RFC 3164 from any networked device</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+                        <span style="font-size:18px;">🔍</span>
+                        <div>
+                            <div style="font-weight:600; color:var(--text);">macOS Unified Log</div>
+                            <div style="font-size:11px; color:var(--text-muted);">sudo &amp; auth policy via <code>log show</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-muted" style="border-style:solid;">
+                <div class="hero-aside-title">vs. Commercial SIEMs</div>
+                <div style="font-size:12px; color:var(--text-muted); line-height:1.8;">
+                    <div>✅ <strong style="color:var(--text);">Alert Explainability (XAI)</strong> — Splunk & QRadar have none</div>
+                    <div>✅ <strong style="color:var(--text);">Confidence Decay Engine</strong> — No SIEM ages alerts automatically</div>
+                    <div>✅ <strong style="color:var(--text);">Auto Threat Narratives</strong> — Analysts write these manually today</div>
+                    <div>✅ <strong style="color:var(--text);">Behavioral DNA Groups</strong> — Pattern-based, not entity-based dedup</div>
+                    <div>✅ <strong style="color:var(--text);">Analyst Feedback Loop</strong> — Adjusts confidence without retraining</div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        Built with <span>Python + Flask</span> and a touch of <span>Chart.js</span>.
+        Sentinel SIEM · Built with <span>Python + Flask</span> · Real macOS system log telemetry
     </div>
 </div>
+
+<script>
+// Load live stats from API and animate in
+async function loadStats() {
+    try {
+        const res = await fetch('/api/dashboard-stats');
+        if (!res.ok) return;
+        const d = await res.json();
+        const patch = {
+            'stat-events': d.total_events,
+            'stat-alerts': d.total_alerts,
+            'stat-failed': d.failed_logins,
+            'stat-ips':    d.unique_ips,
+        };
+        for (const [id, val] of Object.entries(patch)) {
+            const el = document.getElementById(id);
+            if (el && val !== undefined) {
+                el.textContent = val.toLocaleString();
+                el.classList.add('stat-animated');
+            }
+        }
+    } catch(e) { /* silent */ }
+}
+loadStats();
+// Auto-refresh every 30 seconds
+setInterval(loadStats, 30000);
+</script>
 
 </body>
 </html>

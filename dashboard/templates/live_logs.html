@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data — Sentinel SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .source-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 900px) { .source-grid { grid-template-columns: 1fr; } }
+
+        .source-card {
+            border-radius: var(--radius);
+            padding: 18px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            transition: border-color 0.2s;
+        }
+        .source-card:hover { border-color: rgba(99,102,241,0.4); }
+        .source-icon { font-size: 26px; margin-bottom: 10px; }
+        .source-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+        .source-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
+
+        .mode-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: rgba(13,23,41,0.6);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 10px;
+        }
+        .mode-option:hover, .mode-option.selected {
+            border-color: rgba(99,102,241,0.5);
+            background: rgba(99,102,241,0.08);
+        }
+        .mode-option input[type=radio] { accent-color: #6366f1; margin-top: 3px; }
+        .mode-title { font-size: 13px; font-weight: 600; color: var(--text); }
+        .mode-desc  { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: rgba(4,12,26,0.8);
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+            font-size: 13px;
+        }
+        .status-dot-on  { width:9px; height:9px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.2); }
+        .status-dot-off { width:9px; height:9px; border-radius:50%; background:#6b7280; }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #6ee7b7;
+            background: rgba(16,185,129,0.06);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(16,185,129,0.2);
+            margin-top: 8px;
+            word-break: break-all;
+            line-height: 1.7;
+        }
+
+        .lookback-select {
+            background: rgba(13,23,41,0.98);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            padding: 8px 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            outline: none;
+            width: 100%;
+        }
+
+        .progress-bar-wrap { height: 3px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 14px; display: none; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #6366f1, #22c55e, #6366f1); background-size: 200%; animation: progress-slide 1.5s linear infinite; }
+        @keyframes progress-slide { to { background-position: -200% 0; } }
+        .loading .progress-bar-wrap { display: block; }
+
+        .src-badge { font-size: 10px; padding: 1px 7px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+        .badge-real    { background: rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.35); color:#6ee7b7; }
+        .badge-sim     { background: rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.35); color:#a5b4fc; }
+        .badge-network { background: rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); color:#fbbf24; }
+    </style>
+</head>
+<body>
+
+{% set active_page = 'live' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Live Data Ingestion</div>
+            <p class="page-subtitle">
+                Ingest real authentication events from this Mac's system logs, or receive live syslog from any networked device on your LAN.
+            </p>
+        </div>
+        <div class="pill">
+            <span class="pill-dot" style="{{ 'background:#22c55e' if real_log_exists else 'background:#6b7280;box-shadow:none;animation:none' }};"></span>
+            {{ total_real }} real events collected
+        </div>
+    </div>
+
+    <!-- Source cards -->
+    <div class="source-grid">
+        <div class="source-card">
+            <div class="source-icon">🍎</div>
+            <div class="source-name">macOS ASL Database</div>
+            <div class="source-desc">Reads real login events from Apple System Logger — the same database Console.app uses. Includes loginwindow, terminal sessions.</div>
+            <code style="font-size:11px; color:#a5b4fc;">syslog -k Facility auth</code>
+        </div>
+        <div class="source-card">
+            <div class="source-icon">📋</div>
+            <div class="source-name">Login History (wtmp)</div>
+            <div class="source-desc">Parses <code>last</code> output — every console login, TTY session, reboot and shutdown from the system wtmp database.</div>
+            <code style="font-size:11px; color:#a5b4fc;">last -w</code>
+        </div>
+        <div class="source-card">
+            <div class="source-icon">📡</div>
+            <div class="source-name">Network Syslog (UDP)</div>
+            <div class="source-desc">Receives UDP RFC 3164 syslog from any device on the network — routers, servers, Linux boxes.</div>
+            <code style="font-size:11px; color:#a5b4fc;">UDP :{{ syslog_status.port }}</code>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+
+        <!-- Ingest control -->
+        <div class="card" id="ingestCard">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Ingest Real Logs</div>
+                    <div class="card-subtitle">Choose source mode and run the full SIEM pipeline</div>
+                </div>
+            </div>
+
+            <form action="{{ url_for('ingest_real') }}" method="POST" id="ingestForm" onsubmit="startLoading()">
+                <label class="mode-option selected" onclick="selectMode(this)">
+                    <input type="radio" name="mode" value="real_only" checked>
+                    <div>
+                        <div class="mode-title">🍎 Real Only — macOS System Logs</div>
+                        <div class="mode-desc">Analyze only real system auth events from this machine. Clean, uncontaminated data.</div>
+                    </div>
+                </label>
+                <label class="mode-option" onclick="selectMode(this)">
+                    <input type="radio" name="mode" value="combined">
+                    <div>
+                        <div class="mode-title">🔀 Combined — Real + Simulated</div>
+                        <div class="mode-desc">Merge real macOS auth events with the demo dataset for richer alert coverage.</div>
+                    </div>
+                </label>
+
+                <div style="margin-bottom:14px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">Look-back window</div>
+                    <select name="lookback_hours" class="lookback-select">
+                        <option value="24">Last 24 hours</option>
+                        <option value="72">Last 3 days</option>
+                        <option value="168" selected>Last 7 days</option>
+                        <option value="720">Last 30 days</option>
+                        <option value="8760">Last 1 year</option>
+                    </select>
+                </div>
+
+                <div class="progress-bar-wrap" id="progressWrap"><div class="progress-bar"></div></div>
+
+                <button class="button button-green" type="submit" id="ingestBtn" style="width:100%; justify-content:center;">
+                    ⚡ Ingest &amp; Run Pipeline
+                </button>
+            </form>
+        </div>
+
+        <!-- Syslog listener -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Network Syslog Listener</div>
+                    <div class="card-subtitle">Receive logs from any networked device in real time</div>
+                </div>
+            </div>
+
+            <div class="status-row">
+                <div class="{{ 'status-dot-on' if syslog_status.active else 'status-dot-off' }}"></div>
+                <span>Listener is <strong>{{ 'ACTIVE' if syslog_status.active else 'INACTIVE' }}</strong>
+                on UDP port <code>{{ syslog_status.port }}</code></span>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <button class="button" onclick="toggleListener('start')" id="startBtn"
+                    {{ 'disabled style="opacity:0.4;cursor:not-allowed"' if syslog_status.active else '' }}>
+                    ▶ Start
+                </button>
+                <button class="button button-secondary" onclick="toggleListener('stop')" id="stopBtn"
+                    {{ 'disabled style="opacity:0.4;cursor:not-allowed"' if not syslog_status.active else '' }}>
+                    ⏹ Stop
+                </button>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px; font-weight:500;">Forward logs from another machine:</div>
+            <div class="code-block">
+                # Linux / router (rsyslog)<br>
+                echo "*.auth @{{ request.host.split(':')[0] }}:{{ syslog_status.port }}" >> /etc/rsyslog.conf
+            </div>
+            <div class="code-block" style="margin-top:8px;">
+                # macOS — send a test event<br>
+                logger -n {{ request.host.split(':')[0] }} -P {{ syslog_status.port }} "Failed password for testuser from 1.2.3.4 port 22"
+            </div>
+
+            <div style="margin-top:12px; padding:10px 12px; border-radius:6px; background: rgba(4,12,26,0.6); border: 1px dashed rgba(100,116,139,0.2); font-size:12px; color:var(--text-muted); line-height:1.7;">
+                Events received over UDP are batched every 5 seconds and appended to the log file.
+                The pipeline re-runs automatically after each batch.
+                New alerts appear in <a href="{{ url_for('alerts') }}" style="color:#818cf8;">Alerts</a> within seconds.
+            </div>
+        </div>
+    </div>
+
+    <!-- Real events preview -->
+    {% if real_events %}
+    <div class="card section">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Collected Real Events — Preview</div>
+                <div class="card-subtitle">Last {{ real_events | length }} events collected from system logs</div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                {% for src, cnt in source_counts.items() %}
+                <span class="chip">{{ src }}: {{ cnt }}</span>
+                {% endfor %}
+                {% for etype, cnt in event_type_counts.items() %}
+                <span class="chip" style="color:#a5b4fc; border-color:rgba(99,102,241,0.3);">{{ etype }}: {{ cnt }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Event Type</th>
+                        <th>User</th>
+                        <th>IP / Location</th>
+                        <th>Severity</th>
+                        <th>Source</th>
+                        <th>Raw Log</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in real_events | reverse %}
+                    <tr>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:11px; white-space:nowrap; color:var(--text-muted);">{{ e.timestamp or '—' }}</td>
+                        <td><code style="color:#a5b4fc; font-size:11px;">{{ e.event_type }}</code></td>
+                        <td style="font-size:13px;">{{ e.username or '—' }}</td>
+                        <td>
+                            <span style="font-family:'JetBrains Mono',monospace; font-size:11px;">{{ e.ip or '—' }}</span>
+                            {% if e.location and e.location != 'Internal' %}
+                            <span style="font-size:10px; color:var(--text-muted);"> · {{ e.location }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set sev = e.severity | lower %}
+                            <span class="badge badge-{{ sev }}">{{ e.severity }}</span>
+                        </td>
+                        <td>
+                            {% if 'real' in e.source %}
+                            <span class="src-badge badge-real">{{ e.source }}</span>
+                            {% elif 'network' in e.source %}
+                            <span class="src-badge badge-network">{{ e.source }}</span>
+                            {% else %}
+                            <span class="src-badge badge-sim">{{ e.source }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="log-raw">{{ (e.raw_log or '')[:80] }}…</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card section">
+        <div class="empty-state">
+            <div class="empty-state-icon">📡</div>
+            No real events collected yet.<br>
+            Click <strong>⚡ Ingest &amp; Run Pipeline</strong> above to pull from this machine's system logs.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Real collector: <span>collector.macos_log_collector</span> · Network: <span>collector.syslog_listener</span>
+    </div>
+</div>
+
+<script>
+function selectMode(el) {
+    document.querySelectorAll('.mode-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function startLoading() {
+    const btn = document.getElementById('ingestBtn');
+    const wrap = document.getElementById('progressWrap');
+    btn.textContent = '⏳ Collecting & running pipeline…';
+    btn.disabled = true;
+    document.getElementById('ingestCard').classList.add('loading');
+    wrap.style.display = 'block';
+}
+
+async function toggleListener(action) {
+    const res = await fetch('/api/syslog-listener', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action}),
+    });
+    await res.json();
+    window.location.reload();
+}
+
+{% if syslog_status.active %}
+setInterval(async () => {
+    const d = await (await fetch('/api/syslog-status')).json();
+    if (!d.active) window.location.reload();
+}, 10000);
+{% endif %}
+</script>
+
+</body>
+</html>

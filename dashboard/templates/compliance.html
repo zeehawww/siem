@@ -1,147 +1,230 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Compliance Report</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Report — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width:900px) { .summary-grid { grid-template-columns: 1fr; } }
 
+        .summary-tile {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .summary-tile::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+        }
+        .st-blue::before   { background: linear-gradient(90deg, transparent, #6366f1, transparent); }
+        .st-red::before    { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+        .st-orange::before { background: linear-gradient(90deg, transparent, #f97316, transparent); }
+
+        .summary-num  { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 4px; }
+        .summary-desc { font-size: 12px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.03em; }
+
+        .ip-bar {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid var(--border); font-size: 13px;
+        }
+        .ip-bar:last-child { border-bottom: none; }
+        .ip-addr { font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 130px; color: var(--text); }
+        .ip-track { flex: 1; height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; }
+        .ip-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ef4444, #f97316); }
+        .ip-count { font-size: 12px; font-weight: 700; color: #fca5a5; min-width: 28px; text-align: right; }
+
+        .badge-export {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.35);
+            color: #a5b4fc; text-decoration: none; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .badge-export:hover { background: rgba(99,102,241,0.22); border-color: rgba(99,102,241,0.6); }
+    </style>
+</head>
 <body>
 
-    <div class="navbar">
-        <div class="navbar-title">
-            Mini SIEM
-            <span>compliance</span>
+{% set active_page = 'compliance' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Compliance Report</div>
+            <p class="page-subtitle">
+                Audit-ready summary of authentication failures, privilege escalation events, and critical security alerts.
+            </p>
         </div>
-        <div class="nav-links">
-            <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-            <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-            <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-            <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-            <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-            <a href="{{ url_for('compliance') }}" class="nav-link nav-link-active">Compliance</a>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="{{ url_for('export_report') }}" target="_blank" class="button" style="font-size:12px; padding:8px 16px;">📄 Export Full Report</a>
+            <a href="{{ url_for('export_compliance') }}" class="button button-secondary" style="font-size:12px; padding:8px 16px;">↓ Export TXT</a>
         </div>
     </div>
 
-    <div class="page-shell">
-        <div class="page-header">
-            <div>
-                <div class="page-title">Compliance Report</div>
-                <p class="page-subtitle">
-                    Audit-ready summary for authentication failures, privilege escalation, and critical events.
-                </p>
-            </div>
-            <a href="{{ url_for('export_report') }}" class="button button-secondary" target="_blank">Export PDF
-                Report</a>
+    <!-- Summary tiles -->
+    <div class="summary-grid">
+        <div class="summary-tile st-blue">
+            <div class="summary-num" style="color:#a5b4fc;">{{ total_events }}</div>
+            <div class="summary-desc">Total Events Ingested</div>
         </div>
+        <div class="summary-tile st-red">
+            <div class="summary-num" style="color:#f87171;">{{ critical_alerts|length }}</div>
+            <div class="summary-desc">HIGH / CRITICAL Alerts</div>
+        </div>
+        <div class="summary-tile st-orange">
+            <div class="summary-num" style="color:#fb923c;">{{ total_alerts }}</div>
+            <div class="summary-desc">Total Alerts Raised</div>
+        </div>
+    </div>
 
-        <div class="grid grid-2">
-            <div class="card">
-                <div class="card-header">
+    <div class="grid grid-2">
+        <!-- Auth failures -->
+        <div class="card">
+            <div class="card-header">
+                <div>
                     <div class="card-title">Authentication Failures by IP</div>
-                    <div class="card-subtitle">Failed login attempts — potential brute force</div>
+                    <div class="card-subtitle">Failed login attempts — potential brute-force sources</div>
                 </div>
                 {% if failed_by_ip %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Source IP</th>
-                            <th>Failed attempts</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ip, count in failed_by_ip.items() %}
-                        <tr>
-                            <td>{{ ip }}</td>
-                            <td>{{ count }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="empty-state">No failed logins in dataset.</div>
+                <span class="badge badge-high" style="font-size:10px;">{{ failed_by_ip | length }} IPs</span>
                 {% endif %}
             </div>
+            {% if failed_by_ip %}
+            {% set max_fail = failed_by_ip.values() | max %}
+            {% for ip, count in failed_by_ip.items() %}
+            <div class="ip-bar">
+                <div class="ip-addr">{{ ip }}</div>
+                <div class="ip-track">
+                    <div class="ip-fill" style="width:{{ (count / max_fail * 100) | round }}%;"></div>
+                </div>
+                <div class="ip-count">{{ count }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding:20px 0;">
+                <div class="empty-state-icon">✅</div>
+                No failed logins detected.
+            </div>
+            {% endif %}
+        </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Privilege Escalation (sudo) by User</div>
-                    <div class="card-subtitle">Sudo usage — requires audit trail</div>
+        <!-- Sudo usage -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Privilege Escalation — sudo Usage</div>
+                    <div class="card-subtitle">Requires audit trail for compliance</div>
                 </div>
                 {% if sudo_by_user %}
+                <span class="badge badge-medium" style="font-size:10px;">{{ sudo_by_user | length }} users</span>
+                {% endif %}
+            </div>
+            {% if sudo_by_user %}
+            <div class="table-wrapper" style="max-height:280px;">
                 <table>
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Sudo commands</th>
+                            <th>sudo Commands</th>
+                            <th>Risk</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user, count in sudo_by_user.items() %}
                         <tr>
-                            <td>{{ user }}</td>
-                            <td>{{ count }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="empty-state">No sudo usage in dataset.</div>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <div class="card-header">
-                <div class="card-title">Critical Alerts</div>
-                <div class="card-subtitle">HIGH and CRITICAL — require immediate review</div>
-            </div>
-            {% if critical_alerts %}
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Severity</th>
-                            <th>Type</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for a in critical_alerts %}
-                        <tr>
+                            <td style="font-weight:600;">{{ user }}</td>
+                            <td><code style="color:#fbbf24; font-size:12px;">{{ count }}</code></td>
                             <td>
-                                {% if a.severity == "HIGH" %}<span class="badge badge-high">High</span>
-                                {% elif a.severity == "CRITICAL" %}<span class="badge badge-critical">Critical</span>
-                                {% else %}<span class="badge badge-pill">{{ a.severity }}</span>{% endif %}
+                                {% if count > 5 %}
+                                <span class="badge badge-high" style="font-size:10px;">Elevated</span>
+                                {% elif count > 2 %}
+                                <span class="badge badge-medium" style="font-size:10px;">Moderate</span>
+                                {% else %}
+                                <span class="badge badge-low" style="font-size:10px;">Normal</span>
+                                {% endif %}
                             </td>
-                            <td>{{ a.type }}</td>
-                            <td>{{ a.message }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <div class="empty-state">No critical alerts.</div>
-            {% endif %}
-        </div>
-
-        <div class="card card-muted" style="margin-top: 20px;">
-            <div class="card-header">
-                <div class="card-title">Report Summary</div>
+            <div class="empty-state" style="padding:20px 0;">
+                <div class="empty-state-icon">✅</div>
+                No sudo usage detected.
             </div>
-            <p style="font-size: 13px; color: #9ca3af;">
-                Total events: <strong>{{ total_events }}</strong> &nbsp;|&nbsp;
-                Total alerts: <strong>{{ total_alerts }}</strong> &nbsp;|&nbsp;
-                Critical alerts: <strong>{{ critical_alerts|length }}</strong>
-            </p>
-        </div>
-
-        <div class="footer">
-            Use <span>Export Report</span> for audit documentation.
+            {% endif %}
         </div>
     </div>
 
-</body>
+    <!-- Critical alerts table -->
+    <div class="card section">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Critical & High Alerts — Immediate Review Required</div>
+                <div class="card-subtitle">These alerts require documented analyst response for compliance</div>
+            </div>
+            {% if critical_alerts %}
+            <span class="badge badge-critical" style="font-size:10px; animation:none;">{{ critical_alerts|length }} alerts</span>
+            {% endif %}
+        </div>
+        {% if critical_alerts %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Type</th>
+                        <th>MITRE</th>
+                        <th>Message</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in critical_alerts %}
+                    <tr>
+                        <td>
+                            {% set sev = a.severity | lower %}
+                            <span class="badge badge-{{ sev }}">{{ a.severity }}</span>
+                        </td>
+                        <td><code style="color:#a5b4fc; font-size:11px;">{{ a.type }}</code></td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+                            {{ a.mitre_technique or '—' }}
+                        </td>
+                        <td style="font-size:13px;">{{ a.message }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); white-space:nowrap;">
+                            {{ (a.timestamp or '')[:19] }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🛡️</div>
+            No critical alerts found in current dataset.
+        </div>
+        {% endif %}
+    </div>
 
+    <div class="footer">
+        Generated from <span>storage/alerts.json</span> and <span>storage/events.json</span> · Export for audit documentation
+    </div>
+</div>
+
+</body>
 </html>

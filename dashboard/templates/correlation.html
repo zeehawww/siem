@@ -1,88 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Attack Chain</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attack Chain — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .entity-select {
+            background: rgba(13,23,41,0.98);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            padding: 10px 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            outline: none;
+            min-width: 280px;
+            transition: border-color 0.15s;
+        }
+        .entity-select:focus { border-color: rgba(99,102,241,0.5); }
+
+        .chain-timeline {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            flex-wrap: nowrap;
+        }
+
+        .chain-step {
+            display: flex;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .chain-node {
+            display: flex;
+            flex-direction: column;
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            min-width: 160px;
+            max-width: 200px;
+            position: relative;
+            transition: border-color 0.15s;
+        }
+        .chain-node:hover { border-color: rgba(99,102,241,0.4); }
+
+        .chain-node-low      { border-left: 3px solid #22c55e; }
+        .chain-node-medium   { border-left: 3px solid #eab308; }
+        .chain-node-high     { border-left: 3px solid #f97316; }
+        .chain-node-critical { border-left: 3px solid #ef4444; }
+
+        .chain-node-time   { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+        .chain-node-type   { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .chain-node-detail { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+        .chain-arrow {
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: rgba(99,102,241,0.6);
+            font-size: 20px;
+            self-align: center;
+            margin-top: 28px;
+            flex-shrink: 0;
+        }
+
+        .sev-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .sev-low      { background: rgba(34,197,94,0.15);  color: #86efac; }
+        .sev-medium   { background: rgba(234,179,8,0.15);  color: #fde68a; }
+        .sev-high     { background: rgba(249,115,22,0.15); color: #fdba74; }
+        .sev-critical { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+
+        .chain-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-    <div class="navbar-title">
-        Mini SIEM
-        <span>correlation</span>
-    </div>
-    <div class="nav-links">
-        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-        <a href="{{ url_for('correlation') }}" class="nav-link nav-link-active">Attack Chain</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-    </div>
-</div>
+{% set active_page = 'correlation' %}
+{% include '_navbar.html' %}
 
 <div class="page-shell">
     <div class="page-header">
         <div>
-            <div class="page-title">Attack Chain / Correlation View</div>
+            <div class="page-title">Attack Chain — Event Correlation</div>
             <p class="page-subtitle">
-                See how events unfold over time for a given IP or user — e.g. failed logins → success → sudo.
+                Correlate events by IP or user to visualize attack progression: failed logins → account compromise → privilege escalation.
             </p>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Select IP or User</div>
-            <div class="card-subtitle">View the event timeline for a single entity</div>
+            <div>
+                <div class="card-title">Select Entity</div>
+                <div class="card-subtitle">
+                    {{ ips|length }} tracked IPs · {{ users|length }} tracked users
+                </div>
+            </div>
         </div>
 
-        <form class="search-row" method="get" action="{{ url_for('correlation') }}">
-            <select name="entity" class="select" onchange="this.form.submit()">
-                <option value="">— Select IP or User —</option>
-                <optgroup label="IPs">
+        <form method="get" action="{{ url_for('correlation') }}" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <select name="entity" class="entity-select" onchange="this.form.submit()">
+                <option value="">— Select an IP address or username —</option>
+                {% if ips %}
+                <optgroup label="📡 Source IPs">
                     {% for ip in ips %}
                     <option value="{{ ip }}" {% if selected == ip %}selected{% endif %}>{{ ip }}</option>
                     {% endfor %}
                 </optgroup>
-                <optgroup label="Users">
+                {% endif %}
+                {% if users %}
+                <optgroup label="👤 Users">
                     {% for u in users %}
                     <option value="{{ u }}" {% if selected == u %}selected{% endif %}>{{ u }}</option>
                     {% endfor %}
                 </optgroup>
+                {% endif %}
             </select>
+            {% if selected %}
+            <a href="{{ url_for('correlation') }}" class="button button-secondary" style="font-size:12px; padding:8px 14px;">Clear</a>
+            {% endif %}
         </form>
 
         {% if chains %}
-        <div class="attack-chain">
-            {% for chain in chains %}
-            <div class="chain-label">{{ chain.label }} ({{ chain.events|length }} events)</div>
-            <div class="chain-timeline">
-                {% for e in chain.events %}
+        {% for chain in chains %}
+        <div class="chain-header" style="margin-top:20px;">
+            <span style="font-size:16px;">🔗</span>
+            <span style="font-size:14px; font-weight:600;">{{ chain.label }}</span>
+            <span class="badge badge-pill">{{ chain.events|length }} events</span>
+        </div>
+        <div class="chain-timeline">
+            {% for e in chain.events %}
+            <div class="chain-step">
                 <div class="chain-node chain-node-{{ e.severity|lower }}">
-                    <div class="chain-node-time">{{ e.timestamp }}</div>
-                    <div class="chain-node-type">{{ e.event_type }}</div>
-                    <div class="chain-node-detail">
-                        {% if e.username %}user: {{ e.username }}{% endif %}
-                        {% if e.ip %} · {{ e.ip }}{% endif %}
+                    <div class="chain-node-time">{{ e.timestamp or '—' }}</div>
+                    <div class="chain-node-type">
+                        <span class="sev-count-badge sev-{{ e.severity|lower }}" style="display:inline-flex; margin-right:5px;">{{ loop.index }}</span>
+                        {{ e.event_type }}
                     </div>
-                    {% if not loop.last %}
-                    <div class="chain-arrow">→</div>
-                    {% endif %}
+                    <div class="chain-node-detail">
+                        {% if e.username %}<div>user: <strong>{{ e.username }}</strong></div>{% endif %}
+                        {% if e.ip and e.ip != '0.0.0.0' %}<div>ip: <code style="font-size:10px;">{{ e.ip }}</code></div>{% endif %}
+                        {% if e.location and e.location != 'Internal' %}<div style="color:#fbbf24;">🌐 {{ e.location }}</div>{% endif %}
+                        <div style="margin-top:4px;">
+                            <span class="badge badge-{{ e.severity|lower }}" style="font-size:9px; min-width:0; padding:1px 6px;">{{ e.severity }}</span>
+                        </div>
+                    </div>
                 </div>
-                {% endfor %}
+                {% if not loop.last %}
+                <div class="chain-arrow">→</div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
+        {% endfor %}
+
         {% elif selected %}
-        <div class="empty-state">No events found for {{ selected }}.</div>
+        <div class="empty-state" style="margin-top:20px;">
+            <div class="empty-state-icon">🔍</div>
+            No events found for <strong>{{ selected }}</strong> in the current dataset.
+        </div>
+
         {% else %}
-        <div class="empty-state">Select an IP or user above to see the attack chain timeline.</div>
+        <div class="empty-state" style="margin-top:20px;">
+            <div class="empty-state-icon">🔗</div>
+            Select an IP or user above to visualize their event timeline.<br>
+            <span style="font-size:12px; color:rgba(100,116,139,0.6); margin-top:6px; display:block;">
+                Tip: Look for an IP that has both FAILED_LOGIN and SUCCESS_LOGIN events — that's a compromised account chain.
+            </span>
+        </div>
         {% endif %}
     </div>
 
     <div class="footer">
-        Correlates events by <span>IP</span> or <span>username</span> to visualize attack progression.
+        Events grouped by <span>IP address</span> or <span>username</span> from <span>storage/events.json</span>
     </div>
 </div>
 

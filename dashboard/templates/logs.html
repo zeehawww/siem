@@ -1,158 +1,151 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Logs</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Explorer — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-    <div class="navbar">
-        <div class="navbar-title">
-            Mini SIEM
-            <span>logs</span>
+{% set active_page = 'logs' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Log Explorer</div>
+            <p class="page-subtitle">
+                Normalized authentication events — parsed from real macOS system logs with severity, user, IP and geolocation context.
+            </p>
         </div>
-        <div class="nav-links">
-            <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-            <a href="{{ url_for('logs') }}" class="nav-link nav-link-active">Logs</a>
-            <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-            <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-            <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-            <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <a href="{{ url_for('live_logs') }}" class="button button-green" style="font-size:12px; padding:7px 14px;">⚡ Ingest Live</a>
+            <a href="{{ url_for('export_events') }}" class="button button-secondary" style="font-size:12px; padding:7px 14px;">↓ Export CSV</a>
+            <div class="pill">
+                <span class="pill-dot"></span>
+                {{ events|length }} events
+            </div>
         </div>
     </div>
 
-    <div class="page-shell">
-        <div class="page-header">
+    <div class="card">
+        <div class="card-header">
             <div>
-                <div class="page-title">Normalized Events</div>
-                <p class="page-subtitle">
-                    Parsed SSH authentication activity with severity, user and IP context.
-                </p>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <a href="{{ url_for('export_events') }}" class="button button-secondary">Export CSV</a>
-                <div class="pill">
-                    <span class="pill-dot"></span>
-                    {{ events|length }} events loaded
-                </div>
+                <div class="card-title">Event Stream</div>
+                <div class="card-subtitle">Client-side search and severity filter</div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Log Explorer</div>
-                <div class="card-subtitle">Client‑side filters to quickly slice events</div>
-            </div>
-
-            <div class="search-row">
-                <input id="searchText" class="input" type="text" placeholder="Search by user, IP or event type…">
-
-                <select id="severityFilter" class="select">
-                    <option value="">All severities</option>
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                    <option value="CRITICAL">Critical</option>
-                </select>
-
-                <button class="button-ghost button" type="button" onclick="resetFilters()">
-                    Clear filters
-                </button>
-            </div>
-
-            <div class="table-wrapper">
-                {% if events %}
-                <table id="logsTable">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Event</th>
-                            <th>User</th>
-                            <th>IP</th>
-                            <th>Location</th>
-                            <th>Severity</th>
-                            <th>Raw log</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for e in events %}
-                        <tr>
-                            <td>{{ e.timestamp }}</td>
-                            <td>{{ e.event_type }}</td>
-                            <td>{{ e.username or "-" }}</td>
-                            <td>{{ e.ip or "-" }}</td>
-                            <td>{{ e.location or "Unknown" }}</td>
-                            <td>
-                                {% if e.severity == "LOW" %}
-                                <span class="badge badge-low">Low</span>
-                                {% elif e.severity == "MEDIUM" %}
-                                <span class="badge badge-medium">Medium</span>
-                                {% elif e.severity == "HIGH" %}
-                                <span class="badge badge-high">High</span>
-                                {% elif e.severity == "CRITICAL" %}
-                                <span class="badge badge-critical">Critical</span>
-                                {% else %}
-                                <span class="badge badge-pill">Unknown</span>
-                                {% endif %}
-                            </td>
-                            <td><span class="log-raw" title="{{ e.raw_log }}">{{ e.raw_log }}</span></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="empty-state">
-                    No events have been ingested yet. Run the analysis to populate `events.json`.
-                </div>
-                {% endif %}
-            </div>
+        <div class="search-row" style="margin-bottom:14px;">
+            <input id="searchText" class="input" type="text" placeholder="🔍  Search by user, IP, event type or raw log…"
+                   style="flex:1; min-width:200px; border-radius:var(--radius-sm);"
+                   oninput="applyFilters()">
+            <select id="severityFilter" class="select" style="border-radius:var(--radius-sm);" onchange="applyFilters()">
+                <option value="">All severities</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+            </select>
+            <select id="typeFilter" class="select" style="border-radius:var(--radius-sm);" onchange="applyFilters()">
+                <option value="">All event types</option>
+                <option>FAILED_LOGIN</option>
+                <option>SUCCESS_LOGIN</option>
+                <option>SUDO_USAGE</option>
+                <option>ROOT_LOGIN</option>
+                <option>SCREEN_LOCK</option>
+                <option>BIOMETRIC_AUTH</option>
+                <option>LOGOUT</option>
+            </select>
+            <button class="button button-secondary" type="button" onclick="resetFilters()" style="font-size:12px;">Clear</button>
         </div>
 
-        <div class="footer">
-            Parsed using the <span>`parser.log_parser`</span> module.
+        <div class="table-wrapper">
+            {% if events %}
+            <table id="logsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Event Type</th>
+                        <th>User</th>
+                        <th>Source IP</th>
+                        <th>Location</th>
+                        <th>Severity</th>
+                        <th>Source</th>
+                        <th>Raw Log</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in events | reverse %}
+                    <tr data-text="{{ (e.event_type + ' ' + (e.username or '') + ' ' + (e.ip or '') + ' ' + (e.raw_log or '')) | lower }}"
+                        data-sev="{{ e.severity }}"
+                        data-type="{{ e.event_type }}">
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:11px; white-space:nowrap; color:var(--text-muted);">{{ e.timestamp or '—' }}</td>
+                        <td><code style="color:#a5b4fc; font-size:11px;">{{ e.event_type }}</code></td>
+                        <td style="font-weight:500;">{{ e.username or '—' }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ e.ip or '—' }}</td>
+                        <td style="font-size:12px; color:var(--text-muted);">
+                            {% if e.location and e.location != 'Internal' %}
+                            <span style="color:#fbbf24;">🌐 {{ e.location }}</span>
+                            {% elif e.location %}
+                            <span style="color:#6ee7b7;">🏠 {{ e.location }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% set sev = e.severity | lower %}
+                            <span class="badge badge-{{ sev }}">{{ e.severity }}</span>
+                        </td>
+                        <td>
+                            <span style="font-size:10px; padding:2px 7px; border-radius:4px; font-family:'JetBrains Mono',monospace;
+                                {{ 'background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#6ee7b7;' if 'real' in (e.source or '') else
+                                   'background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;' }}">
+                                {{ e.source or 'sim' }}
+                            </span>
+                        </td>
+                        <td class="log-raw" title="{{ e.raw_log }}">{{ e.raw_log or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                No events ingested yet.<br>
+                Go to <a href="{{ url_for('live_logs') }}" style="color:#818cf8;">⚡ Live Data</a> to collect real system events.
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <script>
-        const searchInput = document.getElementById('searchText');
-        const severityFilter = document.getElementById('severityFilter');
-        const table = document.getElementById('logsTable');
+    <div class="footer">
+        Parsed by <span>parser.log_parser</span> · Real events collected by <span>collector.macos_log_collector</span>
+    </div>
+</div>
 
-        function normalize(text) {
-            return (text || '').toString().toLowerCase();
-        }
+<script>
+function applyFilters() {
+    const q    = document.getElementById('searchText').value.toLowerCase();
+    const sev  = document.getElementById('severityFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    document.querySelectorAll('#logsTable tbody tr').forEach(tr => {
+        const text  = tr.dataset.text || '';
+        const rowSev= tr.dataset.sev  || '';
+        const rowTyp= tr.dataset.type || '';
+        tr.style.display = (
+            (!q    || text.includes(q)) &&
+            (!sev  || rowSev === sev)   &&
+            (!type || rowTyp === type)
+        ) ? '' : 'none';
+    });
+}
 
-        function applyFilters() {
-            if (!table) return;
-            const rows = table.querySelectorAll('tbody tr');
-            const q = normalize(searchInput.value);
-            const sev = severityFilter.value;
-
-            rows.forEach(row => {
-                const user = normalize(row.children[2].textContent);
-                const ip = normalize(row.children[3].textContent);
-                const type = normalize(row.children[1].textContent);
-                const rowSev = row.children[4].textContent.trim().toUpperCase();
-
-                const matchesText = !q || user.includes(q) || ip.includes(q) || type.includes(q);
-                const matchesSev = !sev || rowSev === sev;
-
-                row.style.display = (matchesText && matchesSev) ? '' : 'none';
-            });
-        }
-
-        function resetFilters() {
-            searchInput.value = '';
-            severityFilter.value = '';
-            applyFilters();
-        }
-
-        searchInput.addEventListener('input', applyFilters);
-        severityFilter.addEventListener('change', applyFilters);
-    </script>
-
+function resetFilters() {
+    document.getElementById('searchText').value      = '';
+    document.getElementById('severityFilter').value  = '';
+    document.getElementById('typeFilter').value      = '';
+    applyFilters();
+}
+</script>
 </body>
-
 </html>

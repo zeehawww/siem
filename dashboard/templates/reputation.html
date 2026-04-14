@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entity Reputation — Sentinel SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .rep-table-wrap {
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: rgba(4,12,26,0.7);
+            overflow: hidden;
+        }
+        .rep-row {
+            display: grid;
+            grid-template-columns: 2fr 180px 100px 80px 120px 90px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+        }
+        .rep-row:last-child  { border-bottom: none; }
+        .rep-row:hover       { background: rgba(99,102,241,0.06); }
+        .rep-head {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(8,15,30,0.98);
+            display: grid;
+            grid-template-columns: 2fr 180px 100px 80px 120px 90px;
+            gap: 12px;
+        }
+
+        .entity-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .entity-kind-badge {
+            font-size: 9px;
+            padding: 1px 7px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .entity-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .score-col { display: flex; flex-direction: column; gap: 4px; }
+        .score-num {
+            font-size: 18px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        .score-bar-track { height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+        .score-bar-fill  { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+        .heat-critical .score-bar-fill { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .heat-high     .score-bar-fill { background: linear-gradient(90deg, #f97316, #ea580c); }
+        .heat-medium   .score-bar-fill { background: linear-gradient(90deg, #eab308, #ca8a04); }
+        .heat-low      .score-bar-fill { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
+        .novel-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 999px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc;
+        }
+
+        @media (max-width: 900px) {
+            .rep-row, .rep-head { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+{% set active_page = 'reputation' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Entity Reputation Heat Score</div>
+            <p class="page-subtitle">
+                Persistent internal reputation built from observed behavior — no external threat intelligence feeds required.
+                Scores decay 15% per pipeline run when entities go quiet.
+            </p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span class="novel-badge">🔥 Novel Feature</span>
+            <div class="pill">
+                <span class="pill-dot"></span>
+                {{ entities|length }} entities tracked
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Reputation Leaderboard</div>
+                <div class="card-subtitle">Sorted by accumulated suspicion score — higher = greater threat. Scores cap at 1000.</div>
+            </div>
+        </div>
+
+        {% if entities %}
+        <div class="rep-table-wrap">
+            <div class="rep-head">
+                <span>Entity</span>
+                <span>Heat Score</span>
+                <span>Heat Level</span>
+                <span>Alerts</span>
+                <span>Worst Alert</span>
+                <span>Quiet Runs</span>
+            </div>
+            {% for e in entities %}
+            <div class="rep-row heat-{{ e.heat | lower }}">
+                <div>
+                    <div class="entity-name">
+                        {{ e.entity }}
+                        <span class="entity-kind-badge">{{ e.kind }}</span>
+                    </div>
+                    {% if e.worst_type %}
+                    <div class="entity-sub">Last alert: <code style="font-size:10px; color:#a5b4fc;">{{ e.worst_type }}</code></div>
+                    {% endif %}
+                </div>
+
+                <div class="score-col">
+                    <div class="score-num" style="color:
+                        {% if e.heat == 'CRITICAL' %}#f87171
+                        {% elif e.heat == 'HIGH' %}#fb923c
+                        {% elif e.heat == 'MEDIUM' %}#facc15
+                        {% else %}#4ade80{% endif %};">{{ e.score }}</div>
+                    <div class="score-bar-track">
+                        <div class="score-bar-fill" style="width:{{ [e.score / 10, 100] | min }}%;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    {% set h = e.heat | lower %}
+                    <span class="badge badge-{{ h }}">{{ e.heat }}</span>
+                </div>
+
+                <div style="font-size:15px; font-weight:700;">{{ e.alert_count }}</div>
+
+                <div>
+                    {% set ws = e.worst_severity | lower %}
+                    <span class="badge badge-{{ ws }}" style="font-size:10px; min-width:0; padding:2px 8px;">{{ e.worst_severity }}</span>
+                </div>
+
+                <div style="font-size:12px; color:{{ 'var(--text-muted)' if e.runs_quiet > 3 else 'var(--text)' }};">
+                    {{ e.runs_quiet }}
+                    {% if e.runs_quiet > 3 %}
+                    <div style="font-size:10px; color:rgba(100,116,139,0.6); margin-top:2px;">📉 cooling</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            No reputation data yet.<br>
+            <a href="{{ url_for('live_logs') }}" style="color:#818cf8;">Ingest real logs</a> and run the pipeline to build entity profiles.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card card-muted" style="border-style:solid; margin-top:18px;">
+        <div class="card-title" style="margin-bottom:10px;">How Reputation Scoring Works</div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; margin-top:8px;">
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.8;">
+                <strong style="color:var(--text);">Score Accumulation</strong><br>
+                CRITICAL alert → +50 pts, HIGH → +30 pts, MEDIUM → +15 pts, LOW → +5 pts.
+                Type bonuses: ROOT_LOGIN adds +30, COMPROMISED_ACCOUNT adds +25.
+            </div>
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.8;">
+                <strong style="color:var(--text);">Behavioral Decay</strong><br>
+                Every pipeline run, all entities that were NOT seen this run have their score multiplied by 0.85.
+                An entity that goes quiet for 5 runs loses ~44% of their score.
+            </div>
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.8;">
+                <strong style="color:var(--text);">vs. Commercial SIEMs</strong><br>
+                Splunk, QRadar, and Sentinel rely on paid threat intel (VirusTotal, Shodan).
+                This system builds reputation <em>organically</em> from your own telemetry — no API keys needed.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered by <span>analyzer.reputation_engine</span> · Persisted to <span>storage/reputation.json</span>
+    </div>
+</div>
+
+</body>
+</html>

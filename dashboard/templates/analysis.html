@@ -1,202 +1,239 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Analysis</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection Analysis — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+    <style>
+        .metric-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+        }
+        .mc-indigo::before  { background: linear-gradient(90deg, transparent, #6366f1, transparent); }
+        .mc-red::before     { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+        .mc-orange::before  { background: linear-gradient(90deg, transparent, #f97316, transparent); }
+        .mc-green::before   { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
 
+        .rule-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .rule-item:last-child { border-bottom: none; }
+        .rule-title { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+        .rule-desc  { font-size: 12px; color: var(--text-muted); line-height:1.5; }
+
+        .attacker-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .attacker-bar:last-child { border-bottom: none; }
+        .attacker-ip { font-family: 'JetBrains Mono', monospace; font-size:12px; min-width:140px; }
+        .attacker-track {
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--border);
+            overflow: hidden;
+        }
+        .attacker-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #ef4444, #f97316);
+        }
+        .attacker-count { font-size:12px; font-weight:700; color:#fca5a5; min-width:32px; text-align:right; }
+    </style>
+</head>
 <body>
 
-    <div class="navbar">
-        <div class="navbar-title">
-            Mini SIEM
-            <span>analysis</span>
+{% set active_page = 'analysis' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Detection Overview</div>
+            <p class="page-subtitle">
+                Authentication metrics, severity distribution, and top threat actors from the current event dataset.
+            </p>
         </div>
-        <div class="nav-links">
-            <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-            <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-            <a href="{{ url_for('analysis') }}" class="nav-link nav-link-active">Analysis</a>
-            <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-            <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-            <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-        </div>
-    </div>
-
-    <div class="page-shell">
-        <div class="page-header">
-            <div>
-                <div class="page-title">Detection Overview</div>
-                <p class="page-subtitle">
-                    Quick at‑a‑glance metrics on authentication activity and rule‑based detections.
-                </p>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <form action="{{ url_for('run_analysis') }}" style="display:inline;">
-                    <button class="button" type="submit">Re‑run pipeline</button>
-                </form>
-                <form action="{{ url_for('simulate') }}" style="display:inline;">
-                    <button class="button button-secondary" type="submit">Simulate new events</button>
-                </form>
-                <a href="{{ url_for('export_report') }}" target="_blank" class="button button-secondary"
-                    style="display:inline-flex; align-items:center; text-decoration:none;">Export PDF Report</a>
-            </div>
-        </div>
-
-        <div class="grid grid-3">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Total events</div>
-                        <div class="card-subtitle">Ingested into `events.json`</div>
-                    </div>
-                </div>
-                <div class="metric-value">{{ stats.total_events }}</div>
-                <div class="metric-label">From {{ stats.unique_ips }} unique source IPs</div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Failed logins</div>
-                        <div class="card-subtitle">Potential brute‑force surface</div>
-                    </div>
-                </div>
-                <div class="metric-value">{{ stats.failed_logins }}</div>
-                <div class="metric-label">
-                    Success logins: {{ stats.success_logins }} | Sudo events: {{ stats.sudo_usage }}
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">High‑risk events</div>
-                        <div class="card-subtitle">HIGH and CRITICAL combined</div>
-                    </div>
-                </div>
-                <div class="metric-value">{{ stats.high_and_critical }}</div>
-                <div class="metric-label">
-                    Last event at: {{ stats.last_timestamp or "n/a" }}
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-2" style="margin-top: 20px;">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Severity distribution</div>
-                    <div class="card-subtitle">Visual breakdown of event severities</div>
-                </div>
-                <canvas id="severityChart" height="200"></canvas>
-            </div>
-
-            <div class="card card-muted">
-                <div class="card-header">
-                    <div class="card-title">How detections work</div>
-                    <div class="card-subtitle">Backed by `analyzer/detection_engine.py`</div>
-                </div>
-                <p style="font-size:13px; color:#9ca3af; margin-bottom:10px;">
-                    This mini SIEM focuses on a few common SSH‑related behaviors:
-                </p>
-                <ul class="timeline">
-                    <li>
-                        <span class="severity-dot high"></span>
-                        <strong>BRUTE_FORCE</strong> – 3+ consecutive failed logins from the same IP.
-                    </li>
-                    <li>
-                        <span class="severity-dot critical"></span>
-                        <strong>COMPROMISED_ACCOUNT</strong> – success after multiple failures.
-                    </li>
-                    <li>
-                        <span class="severity-dot high"></span>
-                        <strong>PRIV_ESC</strong> – sudo usage events.
-                    </li>
-                    <li>
-                        <span class="severity-dot critical"></span>
-                        <strong>ROOT_LOGIN</strong> – direct root login detection.
-                    </li>
-                </ul>
-                <div class="tag-row">
-                    <span class="tag">Rule‑based detection</span>
-                    <span class="tag">Stateful IP tracking</span>
-                    <span class="tag">Simple to extend with more rules</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Top Attacker IPs</div>
-                    <div class="card-subtitle">IPs with the most failed login attempts</div>
-                </div>
-                {% if top_attackers %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Source IP</th>
-                                <th>Failed Attempts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ip, count in top_attackers %}
-                            <tr>
-                                <td>{{ ip }}</td>
-                                <td>{{ count }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="empty-state">No failed logins found.</div>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="footer">
-            Detection logic powered by <span>`analyzer.detection_engine`</span>.
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <form action="{{ url_for('run_analysis') }}" style="display:inline;">
+                <button class="button" type="submit" style="font-size:12px; padding:8px 16px;">🔄 Re-run Pipeline</button>
+            </form>
+            <a href="{{ url_for('export_report') }}" target="_blank" class="button button-secondary" style="font-size:12px; padding:8px 16px;">📄 Export Report</a>
         </div>
     </div>
 
-    <script>
-        const severityLabels = {{ severity.keys() | list | safe }};
-        const severityCounts = {{ severity.values() | list | safe }};
+    <!-- Metric cards -->
+    <div class="grid grid-4" style="margin-bottom:20px;">
+        <div class="metric-card mc-indigo">
+            <div class="card-title" style="margin-bottom:10px;">Total Events</div>
+            <div class="metric-value">{{ stats.total_events }}</div>
+            <div class="metric-label">from {{ stats.unique_ips }} unique source IPs</div>
+        </div>
+        <div class="metric-card mc-red">
+            <div class="card-title" style="margin-bottom:10px;">Failed Logins</div>
+            <div class="metric-value" style="color:#f87171;">{{ stats.failed_logins }}</div>
+            <div class="metric-label">brute-force attack surface</div>
+        </div>
+        <div class="metric-card mc-orange">
+            <div class="card-title" style="margin-bottom:10px;">High-Risk Events</div>
+            <div class="metric-value" style="color:#fb923c;">{{ stats.high_and_critical }}</div>
+            <div class="metric-label">HIGH + CRITICAL combined</div>
+        </div>
+        <div class="metric-card mc-green">
+            <div class="card-title" style="margin-bottom:10px;">Successful Logins</div>
+            <div class="metric-value" style="color:#4ade80;">{{ stats.success_logins }}</div>
+            <div class="metric-label">sudo events: {{ stats.sudo_usage }}</div>
+        </div>
+    </div>
 
-        const ctx = document.getElementById('severityChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: severityLabels,
-                    datasets: [{
-                        data: severityCounts,
-                        backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'],
-                        borderRadius: 6,
-                        maxBarThickness: 36
-                    }]
-                },
-                options: {
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#9ca3af' }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(55, 65, 81, 0.6)' },
-                            ticks: { color: '#6b7280', precision: 0 }
-                        }
-                    }
-                }
-            });
+    <div class="grid grid-2">
+        <!-- Chart -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Severity Distribution</div>
+                <div class="card-subtitle">Event count by severity tier</div>
+            </div>
+            <canvas id="severityChart" height="220"></canvas>
+        </div>
+
+        <!-- Top attackers -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Top Threat Actors</div>
+                <div class="card-subtitle">IPs with the most failed login attempts</div>
+            </div>
+            {% if top_attackers %}
+            {% set max_count = top_attackers[0][1] %}
+            {% for ip, count in top_attackers %}
+            <div class="attacker-bar">
+                <div class="attacker-ip">{{ ip }}</div>
+                <div class="attacker-track">
+                    <div class="attacker-fill" style="width:{{ (count / max_count * 100) | round }}%;"></div>
+                </div>
+                <div class="attacker-count">{{ count }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding:24px 0;">
+                <div class="empty-state-icon">✅</div>
+                No failed logins detected.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detection rules -->
+    <div class="card section">
+        <div class="card-header">
+            <div class="card-title">Active Detection Rules</div>
+            <div class="card-subtitle">analyzer/detection_engine.py — MITRE ATT&CK mapped with explainability & confidence decay</div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:0;">
+            <div class="rule-item">
+                <span class="severity-dot high" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">BRUTE_FORCE</div>
+                    <div class="rule-desc">3+ consecutive failed logins from the same IP · T1110 Credential Access</div>
+                </div>
+            </div>
+            <div class="rule-item">
+                <span class="severity-dot critical" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">COMPROMISED_ACCOUNT</div>
+                    <div class="rule-desc">Successful login following ≥3 failures from same IP · T1078 Initial Access</div>
+                </div>
+            </div>
+            <div class="rule-item">
+                <span class="severity-dot medium" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">NEW_IP_FOR_USER</div>
+                    <div class="rule-desc">User authenticated from IP not in their behavioral baseline · T1021 Lateral Movement</div>
+                </div>
+            </div>
+            <div class="rule-item">
+                <span class="severity-dot high" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">PRIV_ESC</div>
+                    <div class="rule-desc">sudo command executed — privilege escalation activity · T1548</div>
+                </div>
+            </div>
+            <div class="rule-item">
+                <span class="severity-dot critical" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">ROOT_LOGIN</div>
+                    <div class="rule-desc">Direct login as root user bypassing normal escalation · T1078.003</div>
+                </div>
+            </div>
+            <div class="rule-item">
+                <span class="severity-dot medium" style="margin-top:4px;"></span>
+                <div>
+                    <div class="rule-title">AFTER_HOURS_LOGIN</div>
+                    <div class="rule-desc">Authentication outside 09:00–17:00 business hours · T1078 Initial Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if stats.last_timestamp %}
+    <div class="footer">
+        Last event at <span>{{ stats.last_timestamp }}</span> · Detection engine: <span>analyzer.detection_engine</span>
+    </div>
+    {% else %}
+    <div class="footer">Pipeline ready · <a href="{{ url_for('live_logs') }}" style="color:#818cf8;">Ingest real logs</a> to populate events.</div>
+    {% endif %}
+</div>
+
+<script>
+const sevLabels = {{ severity.keys()  | list | tojson }};
+const sevCounts = {{ severity.values()| list | tojson }};
+const colorMap  = { LOW:'rgba(34,197,94,0.7)', MEDIUM:'rgba(234,179,8,0.7)', HIGH:'rgba(249,115,22,0.7)', CRITICAL:'rgba(239,68,68,0.8)' };
+const colors    = sevLabels.map(l => colorMap[l] || 'rgba(99,102,241,0.7)');
+
+new Chart(document.getElementById('severityChart'), {
+    type: 'bar',
+    data: {
+        labels: sevLabels,
+        datasets: [{
+            data: sevCounts,
+            backgroundColor: colors,
+            borderColor: colors.map(c => c.replace('0.7','1').replace('0.8','1')),
+            borderWidth: 1,
+            borderRadius: 6,
+            maxBarThickness: 48,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} events` } } },
+        scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Inter' } } },
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', precision: 0, font: { family: 'Inter' } } }
         }
-    </script>
+    }
+});
+</script>
 
 </body>
-
 </html>

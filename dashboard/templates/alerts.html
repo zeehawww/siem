@@ -1,97 +1,426 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Alerts</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .alert-expand-row { border-top: none !important; }
+        .alert-expand-row td { padding: 0 !important; }
+
+        .explain-panel {
+            margin: 0 12px 12px;
+            border-radius: var(--radius-sm);
+            background: rgba(99,102,241,0.05);
+            border: 1px solid rgba(99,102,241,0.2);
+            padding: 16px;
+            animation: fadeIn 0.18s ease;
+        }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+        .explain-col-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .explain-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: #818cf8;
+            margin-bottom: 8px;
+        }
+
+        .explain-factor {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+            color: #cbd5e1;
+            padding: 4px 0;
+            line-height: 1.5;
+        }
+
+        .explain-factor.cf { color: var(--text-muted); font-style: italic; }
+        .weight-high   { color: #f87171; font-size: 14px; }
+        .weight-medium { color: #fbbf24; font-size: 14px; }
+
+        .explain-rationale {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .decay-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .decay-track {
+            width: 56px;
+            height: 3px;
+            border-radius: 999px;
+            background: var(--border);
+            overflow: hidden;
+        }
+        .decay-fill               { height: 100%; border-radius: 999px; background: #22c55e; }
+        .decay-fill.high-decay    { background: #eab308; }
+        .decay-fill.critical-decay{ background: #ef4444; }
+
+        .feedback-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0 0;
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+        }
+        .feedback-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+        .fb-btn {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .fb-btn:hover    { border-color: rgba(99,102,241,0.5); color: #c7d2fe; background: rgba(99,102,241,0.08); }
+        .fb-btn.tp       { border-color: rgba(22,163,74,0.5);   color: #86efac; background: rgba(22,163,74,0.08); }
+        .fb-btn.fp       { border-color: rgba(239,68,68,0.5);   color: #fca5a5; background: rgba(239,68,68,0.08); }
+        .fb-btn.ni       { border-color: rgba(234,179,8,0.5);   color: #fde68a; background: rgba(234,179,8,0.08); }
+        .fb-btn.selected { font-weight: 700; }
+
+        .verdict-chip {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .verdict-chip.tp { border-color: rgba(22,163,74,0.5);   color: #86efac; }
+        .verdict-chip.fp { border-color: rgba(239,68,68,0.5);   color: #fca5a5; }
+        .verdict-chip.ni { border-color: rgba(234,179,8,0.5);   color: #fde68a; }
+
+        .dna-chip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(20,184,166,0.1);
+            border: 1px solid rgba(20,184,166,0.3);
+            color: #5eead4;
+        }
+
+        .mitre-chip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .why-btn {
+            background: none;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: #818cf8;
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .why-btn:hover { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.4); }
+
+        .risk-cell { display: flex; flex-direction: column; gap: 3px; }
+        .risk-num  { font-size: 13px; font-weight: 700; }
+        .risk-effective { font-size: 11px; }
+        .risk-up   { color: #86efac; }
+        .risk-down { color: #fca5a5; }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .filter-row .input { border-radius: var(--radius-sm); padding: 7px 12px; }
+        .filter-row .select { border-radius: var(--radius-sm); padding: 7px 12px; }
+        
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.4);
+            color: #fca5a5;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-    <div class="navbar-title">
-        Mini SIEM
-        <span>alerts</span>
-    </div>
-    <div class="nav-links">
-        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-        <a href="{{ url_for('alerts') }}" class="nav-link nav-link-active">Alerts</a>
-        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-    </div>
-</div>
+{% set active_page = 'alerts' %}
+{% include '_navbar.html' %}
 
 <div class="page-shell">
     <div class="page-header">
         <div>
             <div class="page-title">Detection Alerts</div>
             <p class="page-subtitle">
-                Persisted alerts from the last pipeline run — raised by the detection engine.
+                MITRE ATT&CK mapped alerts with explainability engine, confidence decay, behavioral DNA fingerprints and analyst feedback loop.
             </p>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <a href="{{ url_for('export_alerts') }}" class="button button-secondary">Export CSV</a>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <a href="{{ url_for('export_alerts') }}" class="button button-secondary" style="font-size:12px; padding:7px 14px;">↓ Export CSV</a>
             <div class="pill">
-                <span class="pill-dot"></span>
-                {{ alerts|length }} alerts
+                <span class="pill-dot" style="{% if alerts %}background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,0.2){% endif %}"></span>
+                {% if alerts %}{{ alerts|length }} alert{{ 's' if alerts|length != 1 }}{% else %}No alerts{% endif %}
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Alert queue</div>
-            <div class="card-subtitle">Sorted in the order they would appear to an analyst</div>
+            <div>
+                <div class="card-title">Alert Queue</div>
+                <div class="card-subtitle">Click any row or "Why?" to expand the explainability panel · Mark verdicts to improve future detection confidence</div>
+            </div>
+            {% if alerts %}
+            <div style="display:flex; gap:6px; align-items:center;">
+                {% set crit = alerts | selectattr('severity','eq','CRITICAL') | list | length %}
+                {% set high = alerts | selectattr('severity','eq','HIGH')     | list | length %}
+                {% if crit %}<span class="badge badge-critical">{{ crit }} Critical</span>{% endif %}
+                {% if high %}<span class="badge badge-high">{{ high }} High</span>{% endif %}
+            </div>
+            {% endif %}
         </div>
 
-        <div class="table-wrapper">
-            {% if alerts %}
-            <table>
+        {% if alerts %}
+        <div class="filter-row">
+            <input class="input" id="alertSearch" type="text" placeholder="🔍  Search type, message, MITRE…" oninput="filterAlerts()" style="flex:1; min-width:200px;">
+            <select class="select" id="severityFilter" onchange="filterAlerts()">
+                <option value="">All severities</option>
+                <option>CRITICAL</option>
+                <option>HIGH</option>
+                <option>MEDIUM</option>
+                <option>LOW</option>
+            </select>
+        </div>
+        {% endif %}
+
+        {% if alerts %}
+        <div class="table-wrapper" style="max-height:none; overflow:visible;">
+            <table id="alertTable">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Time</th>
                         <th>Type</th>
                         <th>Severity</th>
+                        <th>Risk Score</th>
+                        <th>MITRE</th>
+                        <th>DNA</th>
                         <th>Message</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for a in alerts %}
-                    <tr>
-                        <td>{{ a.id }}</td>
-                        <td>{{ a.timestamp[:19] if a.timestamp else '-' }}</td>
-                        <td>{{ a.type }}</td>
+                {% for a in alerts %}
+                    <tr id="row-{{ a.id }}" data-sev="{{ a.severity }}"
+                        data-text="{{ (a.type + ' ' + a.message + ' ' + (a.mitre_technique or '') + ' ' + (a.mitre_tactic or '')) | lower }}"
+                        onclick="toggleExplain({{ a.id }})" style="cursor:pointer;">
+                        <td style="color:var(--text-muted); font-size:12px;">{{ a.id }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:11px; white-space:nowrap; color:var(--text-muted);">
+                            {{ a.timestamp[:19] if a.timestamp else '—' }}
+                        </td>
+                        <td><code style="color:#a5b4fc; font-size:11px;">{{ a.type }}</code></td>
                         <td>
-                            {% if a.severity == "LOW" %}
-                                <span class="badge badge-low">Low</span>
-                            {% elif a.severity == "MEDIUM" %}
-                                <span class="badge badge-medium">Medium</span>
-                            {% elif a.severity == "HIGH" %}
-                                <span class="badge badge-high">High</span>
-                            {% elif a.severity == "CRITICAL" %}
-                                <span class="badge badge-critical">Critical</span>
-                            {% else %}
-                                <span class="badge badge-pill">Unknown</span>
+                            {% set sev = a.severity | lower %}
+                            <span class="badge badge-{{ sev }}">{{ a.severity }}</span>
+                        </td>
+                        <td>
+                            <div class="risk-cell">
+                                <div class="risk-num">{{ a.risk_score }}</div>
+                                {% if a.confidence_modifier is defined and a.confidence_modifier != 0 %}
+                                <div class="risk-effective {{ 'risk-up' if a.confidence_modifier > 0 else 'risk-down' }}">
+                                    → {{ a.effective_risk_score }} ({{ '+' if a.confidence_modifier > 0 }}{{ a.confidence_modifier }})
+                                </div>
+                                {% endif %}
+                                {% if a.decay_pct is defined and a.decay_pct > 0 %}
+                                <div class="decay-row">
+                                    <div class="decay-track">
+                                        <div class="decay-fill {{ 'critical-decay' if a.decay_pct > 60 else 'high-decay' if a.decay_pct > 25 else '' }}"
+                                             style="width:{{ 100 - a.decay_pct }}%"></div>
+                                    </div>
+                                    <span>−{{ a.decay_pct }}%</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="mitre-chip">
+                                {{ a.mitre_technique or '—' }}<br>
+                                <span style="font-size:10px; color:rgba(100,116,139,0.7);">{{ a.mitre_tactic or '' }}</span>
+                            </span>
+                        </td>
+                        <td>
+                            {% if a.dna %}
+                            <span class="dna-chip">{{ a.dna }}</span>
+                            {% else %}<span style="color:var(--border);">—</span>{% endif %}
+                        </td>
+                        <td style="max-width:280px; font-size:13px;">
+                            {{ a.message }}
+                            {% if a.count and a.count > 1 %}
+                            <span class="badge-pill" style="font-size:10px; vertical-align:middle;">×{{ a.count }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ a.message }}{% if a.count and a.count > 1 %} <span class="badge badge-pill">×{{ a.count }}</span>{% endif %}</td>
+                        <td>
+                            <button class="why-btn" id="why-{{ a.id }}"
+                                onclick="event.stopPropagation(); toggleExplain({{ a.id }})">
+                                Why? ▾
+                            </button>
+                        </td>
                     </tr>
-                    {% endfor %}
+
+                    <!-- Expand row -->
+                    <tr class="alert-expand-row" id="expand-{{ a.id }}" style="display:none;">
+                        <td colspan="9">
+                            <div class="explain-panel" id="panel-{{ a.id }}">
+                                {% if a.explanation %}
+                                <div class="explain-col-grid">
+                                    <div>
+                                        <div class="explain-section-title">Why this alert was raised</div>
+                                        {% for f in a.explanation.factors %}
+                                        <div class="explain-factor">
+                                            <span class="{{ 'weight-high' if f.weight == 'high' else 'weight-medium' if f.weight == 'medium' else '' }}">
+                                                {{ '🔴' if f.weight == 'high' else '🟡' if f.weight == 'medium' else '🟢' }}
+                                            </span>
+                                            <span>{{ f.factor }}</span>
+                                        </div>
+                                        {% endfor %}
+                                        {% if a.explanation.severity_rationale %}
+                                        <div class="explain-rationale">{{ a.explanation.severity_rationale }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="explain-section-title">Counterfactuals — what would escalate severity</div>
+                                        {% for cf in a.explanation.counterfactuals %}
+                                        <div class="explain-factor cf">
+                                            <span>💭</span><span>{{ cf }}</span>
+                                        </div>
+                                        {% else %}
+                                        <div style="font-size:12px; color:var(--text-muted);">No escalation paths identified.</div>
+                                        {% endfor %}
+                                        {% if a.decay_explanation %}
+                                        <div class="explain-rationale" style="margin-top:8px;">
+                                            ⏱ <strong>Confidence decay:</strong> {{ a.decay_explanation }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Analyst feedback -->
+                                <div class="feedback-bar">
+                                    <span class="feedback-label">Analyst verdict:</span>
+                                    <button class="fb-btn tp" onclick="submitFeedback({{ a.id }}, '{{ a.dna or '' }}', 'TRUE_POSITIVE', this)">✅ True Positive</button>
+                                    <button class="fb-btn fp" onclick="submitFeedback({{ a.id }}, '{{ a.dna or '' }}', 'FALSE_POSITIVE', this)">❌ False Positive</button>
+                                    <button class="fb-btn ni" onclick="submitFeedback({{ a.id }}, '{{ a.dna or '' }}', 'NEEDS_INVESTIGATION', this)">🔍 Investigate</button>
+                                    <span class="verdict-chip {{ 'tp' if a.analyst_verdict == 'TRUE_POSITIVE' else 'fp' if a.analyst_verdict == 'FALSE_POSITIVE' else 'ni' if a.analyst_verdict == 'NEEDS_INVESTIGATION' else '' }}"
+                                          id="verdict-{{ a.id }}">{{ a.verdict_label or 'Unreviewed' }}</span>
+                                    <span style="font-size:11px; color:rgba(100,116,139,0.5); margin-left:auto;">
+                                        DNA: {{ a.dna or 'N/A' }} · adjusts confidence for matching patterns without retraining
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
-            {% else %}
-                <div class="empty-state">
-                    No alerts were generated from the current dataset.
-                    Try running the analysis again to ingest more events.
-                </div>
-            {% endif %}
         </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🔕</div>
+            No alerts in storage. Click <a href="{{ url_for('live_logs') }}" style="color:#818cf8;">⚡ Live Data</a> to ingest real system events and run the pipeline.
+        </div>
+        {% endif %}
     </div>
 
     <div class="footer">
-        Alerts persisted to <span>`storage/alerts.json`</span> during pipeline run.
+        Alerts persisted to <span>storage/alerts.json</span> · Confidence adjusted by <span>analyzer.feedback_engine</span>
     </div>
 </div>
 
+<script>
+function toggleExplain(id) {
+    const row = document.getElementById('expand-' + id);
+    if (!row) return;
+    const isOpen = row.style.display !== 'none';
+    row.style.display = isOpen ? 'none' : 'table-row';
+    const btn = document.getElementById('why-' + id);
+    if (btn) btn.textContent = isOpen ? 'Why? ▾' : 'Why? ▴';
+}
+
+async function submitFeedback(alertId, dna, verdict, btn) {
+    try {
+        const res = await fetch('/api/feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({alert_id: alertId, dna, verdict}),
+        });
+        const d = await res.json();
+        if (d.success) {
+            const chip = document.getElementById('verdict-' + alertId);
+            if (chip) {
+                chip.textContent = d.label;
+                chip.className = 'verdict-chip ' + (verdict === 'TRUE_POSITIVE' ? 'tp' : verdict === 'FALSE_POSITIVE' ? 'fp' : 'ni');
+            }
+            btn.closest('.feedback-bar').querySelectorAll('.fb-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+    } catch(e) { console.error('Feedback error', e); }
+}
+
+function filterAlerts() {
+    const q    = document.getElementById('alertSearch').value.toLowerCase();
+    const sev  = document.getElementById('severityFilter').value;
+    const rows = document.querySelectorAll('#alertTable tbody tr:not(.alert-expand-row)');
+    rows.forEach(tr => {
+        const text    = (tr.dataset.text || '');
+        const rowSev  = (tr.dataset.sev  || '');
+        const match   = (!q || text.includes(q)) && (!sev || rowSev === sev);
+        tr.style.display = match ? '' : 'none';
+        // Hide expand row too
+        const expandId = tr.id ? tr.id.replace('row-', '') : null;
+        if (expandId) {
+            const exp = document.getElementById('expand-' + expandId);
+            if (exp && !match) exp.style.display = 'none';
+        }
+    });
+}
+</script>
+
 </body>
+</html>

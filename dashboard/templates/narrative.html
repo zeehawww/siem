@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Narratives — Sentinel SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .narrative-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 22px;
+            margin-bottom: 18px;
+            transition: border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .narrative-card:hover { border-color: rgba(99,102,241,0.4); }
+        .narrative-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; }
+        .narrative-card.critical::before { background: #ef4444; }
+        .narrative-card.high::before     { background: #f97316; }
+        .narrative-card.medium::before   { background: #eab308; }
+        .narrative-card.low::before      { background: #22c55e; }
+
+        .narrative-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .narrative-entity {
+            font-size: 17px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
+        }
+        .narrative-kind {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+        .narrative-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+        .risk-pill {
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.4);
+            color: #c7d2fe;
+        }
+
+        .summary-box {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.7;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: rgba(4,12,26,0.6);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .chain-box {
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.3);
+            font-size: 12px;
+            color: #a5b4fc;
+            margin-bottom: 14px;
+        }
+
+        .narrative-sentences { list-style: none; margin-bottom: 14px; }
+        .narrative-sentences li {
+            font-size: 13px;
+            color: #d1d5db;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.6;
+        }
+        .narrative-sentences li:last-child { border-bottom: none; }
+
+        .technique-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .technique-tag {
+            font-size: 10px;
+            padding: 2px 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(99,102,241,0.4);
+            background: rgba(99,102,241,0.1);
+            color: #a5b4fc;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .novel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.4);
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+
+{% set active_page = 'narrative' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Threat Narrative Generator</div>
+            <p class="page-subtitle">
+                Auto-synthesized plain-English attack stories from correlated alert sequences, grouped by threat actor.
+                No SIEM today generates these automatically — analysts write them manually.
+            </p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span class="novel-badge">🧬 Novel Feature</span>
+            <div class="pill">
+                <span class="pill-dot"></span>
+                {{ narratives|length }} narrative{{ 's' if narratives|length != 1 }}
+            </div>
+        </div>
+    </div>
+
+    {% if narratives %}
+        {% for n in narratives %}
+        <div class="narrative-card {{ n.severity|lower }}">
+            <div class="narrative-header">
+                <div>
+                    <div class="narrative-entity">{{ n.entity }}</div>
+                    <div class="narrative-kind">
+                        {{ '🌐 IP Address' if n.kind == 'ip' else '👤 User Account' }} · {{ n.alert_count }} alert{{ 's' if n.alert_count != 1 }}
+                    </div>
+                </div>
+                <div class="narrative-meta">
+                    {% set sev = n.severity | lower %}
+                    <span class="badge badge-{{ sev }}">{{ n.severity }}</span>
+                    <span class="risk-pill">Risk {{ n.risk_score }}</span>
+                </div>
+            </div>
+
+            <div class="summary-box">
+                📋 <strong>Executive Summary:</strong> {{ n.summary | replace("**", "") }}
+            </div>
+
+            {% if n.chain %}
+            <div class="chain-box">
+                🔗 <strong>Attack pattern detected:</strong> {{ n.chain }}
+            </div>
+            {% endif %}
+
+            <ul class="narrative-sentences">
+                {% for sentence in n.sentences %}
+                <li>{{ sentence }}</li>
+                {% endfor %}
+            </ul>
+
+            {% if n.mitre_techniques %}
+            <div class="technique-tags">
+                {% for tech in n.mitre_techniques %}
+                <span class="technique-tag">{{ tech }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">📖</div>
+            No alerts found to generate narratives from.<br>
+            <a href="{{ url_for('live_logs') }}" style="color:#818cf8; margin-top:6px; display:inline-block;">⚡ Ingest real logs</a> and run the pipeline first.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card card-muted" style="border-style:solid; margin-top:18px;">
+        <div class="card-title" style="margin-bottom:10px;">Why This Is Novel</div>
+        <p style="font-size:13px; color:var(--text-muted); line-height:1.8;">
+            Commercial SIEMs like Splunk Enterprise Security, IBM QRadar, and Microsoft Sentinel surface raw alerts but
+            require analysts to manually piece together the story of an attack.
+            This engine <strong style="color:var(--text);">automatically synthesizes a narrative</strong> per threat actor by correlating
+            their alert sequence, detecting known MITRE ATT&amp;CK chains, and writing a human-readable incident summary.
+            This directly reduces Mean Time to Understand (MTTU) and analyst cognitive load.
+        </p>
+    </div>
+
+    <div class="footer">
+        Powered by <span>analyzer.narrative_engine</span>
+    </div>
+</div>
+
+</body>
+</html>
