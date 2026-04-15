@@ -1,0 +1,13 @@
+{
+  "127.0.0.1": {
+    "entity": "127.0.0.1",
+    "entropy": -0.0,
+    "entropy_label": "NORMAL",
+    "event_dist": {
+      "SUCCESS_LOGIN": 84
+    },
+    "dominant_type": "SUCCESS_LOGIN",
+    "event_count": 84,
+    "entropy_pct": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "127.0.0.1": {
+    "entity": "127.0.0.1",
+    "last_observed": "AFTER_HOURS_LOGIN",
+    "predictions": [
+      {
+        "next_type": "PRIV_ESC",
+        "probability": 0.35,
+        "description": "Privilege escalation via sudo",
+        "mitre": "T1548"
+      },
+      {
+        "next_type": "ROOT_LOGIN",
+        "probability": 0.28,
+        "description": "Direct root / admin access",
+        "mitre": "T1078.003"
+      }
+    ],
+    "risk_label": "LIKELY"
+  }
+}

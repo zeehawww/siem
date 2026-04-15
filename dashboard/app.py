@@ -26,6 +26,9 @@ from analyzer.feedback_engine   import (
 from analyzer.detection_engine  import analyze_event
 from collector.macos_log_collector import write_real_logs_to_file, collect_real_logs
 from collector.syslog_listener     import start_listener_thread, stop_listener, get_status as syslog_status
+from analyzer.velocity_engine   import compute_velocity_profiles
+from analyzer.entropy_engine    import compute_entropy_scores
+from analyzer.prediction_engine import predict_next_steps
 
 app = Flask(__name__)
 
@@ -33,7 +36,10 @@ EVENT_FILE    = os.path.join(PROJECT_ROOT, "storage", "events.json")
 ALERTS_FILE   = os.path.join(PROJECT_ROOT, "storage", "alerts.json")
 LOG_FILE      = os.path.join(PROJECT_ROOT, "logs", "simulated_auth.log")
 REAL_LOG_FILE = os.path.join(PROJECT_ROOT, "logs", "real_auth.log")
-COMBINED_LOG  = os.path.join(PROJECT_ROOT, "logs", "combined_auth.log")
+COMBINED_LOG     = os.path.join(PROJECT_ROOT, "logs", "combined_auth.log")
+VELOCITY_FILE    = os.path.join(PROJECT_ROOT, "storage", "velocity.json")
+ENTROPY_FILE     = os.path.join(PROJECT_ROOT, "storage", "entropy.json")
+PREDICTIONS_FILE = os.path.join(PROJECT_ROOT, "storage", "predictions.json")
 
 
 # ── Data loaders ──────────────────────────────────────────────────────────────
@@ -50,6 +56,27 @@ def load_alerts():
     if not os.path.exists(ALERTS_FILE):
         return []
     with open(ALERTS_FILE) as f:
+        return json.load(f)
+
+
+def load_velocity() -> dict:
+    if not os.path.exists(VELOCITY_FILE):
+        return {}
+    with open(VELOCITY_FILE) as f:
+        return json.load(f)
+
+
+def load_entropy() -> dict:
+    if not os.path.exists(ENTROPY_FILE):
+        return {}
+    with open(ENTROPY_FILE) as f:
+        return json.load(f)
+
+
+def load_predictions() -> dict:
+    if not os.path.exists(PREDICTIONS_FILE):
+        return {}
+    with open(PREDICTIONS_FILE) as f:
         return json.load(f)
 
 
@@ -86,11 +113,13 @@ def analysis():
         "last_timestamp":   events[-1]["timestamp"] if events else None,
     }
 
+    velocity = load_velocity()
     return render_template(
         "analysis.html",
         severity=severity_count,
         stats=stats,
         top_attackers=top_attackers,
+        velocity=velocity,
     )
 
 
@@ -102,8 +131,9 @@ def alerts():
     for idx, a in enumerate(persisted, start=1):
         a["id"] = idx
     # Apply analyst feedback confidence modifiers
-    persisted = apply_feedback_to_alerts(persisted)
-    return render_template("alerts.html", alerts=persisted)
+    persisted   = apply_feedback_to_alerts(persisted)
+    predictions = load_predictions()
+    return render_template("alerts.html", alerts=persisted, predictions=predictions)
 
 
 @app.route("/run-analysis")
@@ -363,7 +393,8 @@ def reputation():
     Shows persistent internal reputation built from observed behavior.
     """
     rep_data = get_reputation()
-    return render_template("reputation.html", entities=rep_data)
+    entropy  = load_entropy()
+    return render_template("reputation.html", entities=rep_data, entropy=entropy)
 
 
 @app.route("/dna")

@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Alert DNA — SIEM</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert DNA — Sentinel SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .dna-card {
@@ -86,24 +88,8 @@
 </head>
 <body>
 
-<div class="navbar">
-    <div class="navbar-title">
-        SIEM
-        <span>DNA</span>
-    </div>
-    <div class="nav-links">
-        <a href="{{ url_for('home') }}" class="nav-link">Overview</a>
-        <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
-        <a href="{{ url_for('analysis') }}" class="nav-link">Analysis</a>
-        <a href="{{ url_for('alerts') }}" class="nav-link">Alerts</a>
-        <a href="{{ url_for('correlation') }}" class="nav-link">Attack Chain</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link">Compliance</a>
-        <a href="{{ url_for('narrative') }}" class="nav-link">Narratives</a>
-        <a href="{{ url_for('reputation') }}" class="nav-link">Reputation</a>
-        <a href="{{ url_for('dna_view') }}" class="nav-link nav-link-active">DNA</a>
-        <a href="{{ url_for('simulator') }}" class="nav-link">Simulator</a>
-    </div>
-</div>
+{% set active_page = 'dna' %}
+{% include '_navbar.html' %}
 
 <div class="page-shell">
     <div class="page-header">

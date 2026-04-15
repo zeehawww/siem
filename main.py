@@ -7,6 +7,9 @@ from analyzer.detection_engine import analyze_event
 from analyzer.dna_engine import enrich_with_dna
 from analyzer.reputation_engine import update_reputation
 from alerts.alert_manager import persist_alerts
+from analyzer.velocity_engine   import compute_velocity_profiles
+from analyzer.entropy_engine    import compute_entropy_scores
+from analyzer.prediction_engine import predict_next_steps
 
 # Make paths independent of the current working directory
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +17,17 @@ _REAL_LOG     = os.path.join(BASE_DIR, "logs", "real_auth.log")
 _SIM_LOG      = os.path.join(BASE_DIR, "logs", "simulated_auth.log")
 # ── Prefer live macOS logs; fall back to simulation only if real log absent ──
 LOG_FILE      = _REAL_LOG if os.path.exists(_REAL_LOG) else _SIM_LOG
-STORAGE_FILE  = os.path.join(BASE_DIR, "storage", "events.json")
+STORAGE_FILE     = os.path.join(BASE_DIR, "storage", "events.json")
+VELOCITY_FILE    = os.path.join(BASE_DIR, "storage", "velocity.json")
+ENTROPY_FILE     = os.path.join(BASE_DIR, "storage", "entropy.json")
+PREDICTIONS_FILE = os.path.join(BASE_DIR, "storage", "predictions.json")
+
+
+def _save_json(data: object, path: str) -> None:
+    """Persist a JSON-serialisable object to disk."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 def run_pipeline(log_file: str = None) -> None:
@@ -67,7 +80,19 @@ def run_pipeline(log_file: str = None) -> None:
         persisted_alerts = []
     update_reputation(persisted_alerts)
 
-    # ── Persist normalized events ─────────────────────────────────────────────
+    # ── Novel: Attack Velocity Profiling ────────────────────────────────────────
+    # Computes rate-of-change and acceleration of attack events per entity.
+    _save_json(compute_velocity_profiles(persisted_alerts), VELOCITY_FILE)
+
+    # ── Novel: Behavioral Entropy Anomaly Detection ───────────────────────────────
+    # Shannon entropy of event-type distribution per entity — spikes = compromise.
+    _save_json(compute_entropy_scores(normalized_events), ENTROPY_FILE)
+
+    # ── Novel: Markov Next-Step Attack Prediction ─────────────────────────────────
+    # Predicts the most likely next attack move per entity from kill-chain model.
+    _save_json(predict_next_steps(persisted_alerts), PREDICTIONS_FILE)
+
+    # ── Persist normalized events ─────────────────────────────────────────────────
     with open(STORAGE_FILE, "w") as f:
         json.dump(normalized_events, f, indent=4)
 

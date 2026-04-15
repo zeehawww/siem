@@ -14,7 +14,7 @@
         }
         .rep-row {
             display: grid;
-            grid-template-columns: 2fr 180px 100px 80px 120px 90px;
+            grid-template-columns: 2fr 160px 90px 60px 100px 90px 80px;
             gap: 12px;
             align-items: center;
             padding: 12px 16px;
@@ -33,7 +33,7 @@
             border-bottom: 1px solid var(--border);
             background: rgba(8,15,30,0.98);
             display: grid;
-            grid-template-columns: 2fr 180px 100px 80px 120px 90px;
+            grid-template-columns: 2fr 160px 90px 60px 100px 90px 80px;
             gap: 12px;
         }
 
@@ -123,6 +123,7 @@
                 <span>Heat Level</span>
                 <span>Alerts</span>
                 <span>Worst Alert</span>
+                <span>Entropy</span>
                 <span>Quiet Runs</span>
             </div>
             {% for e in entities %}
@@ -158,6 +159,27 @@
                 <div>
                     {% set ws = e.worst_severity | lower %}
                     <span class="badge badge-{{ ws }}" style="font-size:10px; min-width:0; padding:2px 8px;">{{ e.worst_severity }}</span>
+                </div>
+
+                <div style="font-size:12px;">
+                    {% set _ent = entropy.get(e.entity) if entropy else None %}
+                    {% if _ent %}
+                    <div style="font-weight:600; font-size:11px; color:
+                        {% if _ent.entropy_label == 'ANOMALOUS' %}#fca5a5
+                        {% elif _ent.entropy_label == 'ELEVATED' %}#fdba74
+                        {% elif _ent.entropy_label == 'MODERATE' %}#fde68a
+                        {% else %}#86efac{% endif %};">{{ _ent.entropy_label }}</div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">H={{ _ent.entropy }}b</div>
+                    <div style="height:3px; border-radius:999px; background:var(--border); overflow:hidden; margin-top:4px; width:60px;">
+                        <div style="width:{{ _ent.entropy_pct }}%; height:100%; border-radius:999px; background:
+                            {% if _ent.entropy_label == 'ANOMALOUS' %}#ef4444
+                            {% elif _ent.entropy_label == 'ELEVATED' %}#f97316
+                            {% elif _ent.entropy_label == 'MODERATE' %}#eab308
+                            {% else %}#22c55e{% endif %};"></div>
+                    </div>
+                    {% else %}
+                    <span style="color:var(--text-muted);">—</span>
+                    {% endif %}
                 </div>
 
                 <div style="font-size:12px; color:{{ 'var(--text-muted)' if e.runs_quiet > 3 else 'var(--text)' }};">
