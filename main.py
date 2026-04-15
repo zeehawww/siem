@@ -7,9 +7,10 @@ from analyzer.detection_engine import analyze_event
 from analyzer.dna_engine import enrich_with_dna
 from analyzer.reputation_engine import update_reputation
 from alerts.alert_manager import persist_alerts
-from analyzer.velocity_engine   import compute_velocity_profiles
-from analyzer.entropy_engine    import compute_entropy_scores
-from analyzer.prediction_engine import predict_next_steps
+from analyzer.velocity_engine          import compute_velocity_profiles
+from analyzer.entropy_engine           import compute_entropy_scores
+from analyzer.prediction_engine        import predict_next_steps
+from analyzer.temporal_fingerprint_engine import compute_temporal_fingerprints
 
 # Make paths independent of the current working directory
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +22,7 @@ STORAGE_FILE     = os.path.join(BASE_DIR, "storage", "events.json")
 VELOCITY_FILE    = os.path.join(BASE_DIR, "storage", "velocity.json")
 ENTROPY_FILE     = os.path.join(BASE_DIR, "storage", "entropy.json")
 PREDICTIONS_FILE = os.path.join(BASE_DIR, "storage", "predictions.json")
+TBF_FILE         = os.path.join(BASE_DIR, "storage", "tbf.json")
 
 
 def _save_json(data: object, path: str) -> None:
@@ -79,6 +81,10 @@ def run_pipeline(log_file: str = None) -> None:
     except Exception:
         persisted_alerts = []
     update_reputation(persisted_alerts)
+
+    # ── Novel: Temporal Behavioral Fingerprinting ────────────────────────────────
+    # Classifies threat actors by timing cadence: AUTOMATED / HUMAN / STEALTHY
+    _save_json(compute_temporal_fingerprints(normalized_events), TBF_FILE)
 
     # ── Novel: Attack Velocity Profiling ────────────────────────────────────────
     # Computes rate-of-change and acceleration of attack events per entity.

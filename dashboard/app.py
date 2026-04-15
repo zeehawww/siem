@@ -40,6 +40,7 @@ COMBINED_LOG     = os.path.join(PROJECT_ROOT, "logs", "combined_auth.log")
 VELOCITY_FILE    = os.path.join(PROJECT_ROOT, "storage", "velocity.json")
 ENTROPY_FILE     = os.path.join(PROJECT_ROOT, "storage", "entropy.json")
 PREDICTIONS_FILE = os.path.join(PROJECT_ROOT, "storage", "predictions.json")
+TBF_FILE         = os.path.join(PROJECT_ROOT, "storage", "tbf.json")
 
 
 # ── Data loaders ──────────────────────────────────────────────────────────────
@@ -80,6 +81,13 @@ def load_predictions() -> dict:
         return json.load(f)
 
 
+def load_tbf() -> dict:
+    if not os.path.exists(TBF_FILE):
+        return {}
+    with open(TBF_FILE) as f:
+        return json.load(f)
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/prediction")
@@ -93,6 +101,7 @@ def prediction():
         predictions=load_predictions(),
         entropy=load_entropy(),
         velocity=load_velocity(),
+        tbf=load_tbf(),
     )
 
 

@@ -11,6 +11,7 @@ analyzer/feedback_engine.py
 analyzer/narrative_engine.py
 analyzer/prediction_engine.py
 analyzer/reputation_engine.py
+analyzer/temporal_fingerprint_engine.py
 analyzer/velocity_engine.py
 collector/__init__.py
 collector/log_collector.py

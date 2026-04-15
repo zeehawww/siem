@@ -192,6 +192,12 @@
                 Measures the rate-of-change and acceleration of attack events over 5 / 15 / 60 minute rolling windows. An ESCALATING profile means attacks are intensifying — requires immediate response.
             </div>
         </div>
+        <div>
+            <div class="algo-item-title">⏱ Temporal Behavioral Fingerprinting</div>
+            <div class="algo-item-desc">
+                Quantizes inter-event time gaps (INSTANT &lt;100ms → bot, FAST &lt;1s → tool, HUMAN 1–30s → operator, SLOW &gt;30s → stealthy probe). Same attack, different timing = different actor type.
+            </div>
+        </div>
     </div>
 
     {% if predictions %}
@@ -222,6 +228,7 @@
             </div>
             {% endfor %}
 
+            {% set t = tbf.get(entity_key) if tbf else None %}
             <div class="pred-meta">
                 <span class="risk-chip risk-{{ pred.risk_label }}">{{ pred.risk_label }}</span>
 
@@ -241,6 +248,17 @@
                     {% elif vel.profile == 'SUSTAINED' %}#fdba74
                     {% else %}var(--text-muted){% endif %};">
                     {{ vel.profile }}
+                </span>
+                {% endif %}
+
+                {% if t %}
+                <span class="meta-chip" style="color:
+                    {% if 'AUTOMATED' in t.actor_type %}#fca5a5
+                    {% elif 'STEALTHY' in t.actor_type %}#fdba74
+                    {% elif 'HUMAN' in t.actor_type %}#67e8f9
+                    {% else %}var(--text-muted){% endif %};"
+                    title="{{ t.actor_description }}">
+                    ⏱ {{ t.actor_type }} · TBF:{{ t.tbf_fingerprint }}
                 </span>
                 {% endif %}
             </div>

@@ -117,10 +117,11 @@ def cmd_analyze(args):
 
 def cmd_predict(args):
     """Print Markov next-step predictions for all active threat entities."""
-    _section("Sentinel — Threat Prediction (Markov)")
-    preds   = _load_json("predictions.json")
-    entropy = _load_json("entropy.json") or {}
+    _section("Sentinel — Threat Prediction (Markov + TBF)")
+    preds    = _load_json("predictions.json")
+    entropy  = _load_json("entropy.json")  or {}
     velocity = _load_json("velocity.json") or {}
+    tbf      = _load_json("tbf.json")      or {}
 
     if not preds:
         _warn("No predictions yet. Run:  sentinel analyze")
@@ -145,6 +146,7 @@ def cmd_predict(args):
 
         ent = entropy.get(entity)
         vel = velocity.get(entity)
+        t   = tbf.get(entity)
         if ent:
             elabel  = ent.get("entropy_label", "")
             ecolour = RED if elabel == "ANOMALOUS" else YELLOW if elabel == "ELEVATED" else GREEN
@@ -153,6 +155,12 @@ def cmd_predict(args):
             vp      = vel.get("profile", "")
             vcolour = RED if vp == "ESCALATING" else YELLOW if vp == "SUSTAINED" else GREEN
             _info(f"Velocity: {_col(vp, vcolour)}  score={vel['velocity_score']}")
+        if t:
+            actor   = t.get("actor_type", "")
+            acolour = RED if "AUTOMATED" in actor else YELLOW if "STEALTHY" in actor else CYAN
+            tbfp    = t.get("tbf_fingerprint", "")
+            cadence = t.get("dominant_cadence", "")
+            _info(f"Actor type: {_col(actor, acolour)}  cadence={cadence}  TBF={tbfp}")
 
 
 def cmd_status(args):
