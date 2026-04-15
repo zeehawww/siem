@@ -1,59 +1,88 @@
-# 🛡 Sentinel SIEM Mini
+# 🛡 Sentinel SIEM
 
-A real-time Security Information and Event Management (SIEM) platform — built in Python and Flask — that ingests live macOS system logs and detects threats with five novel engines not found in commercial tools.
+A **security monitoring tool** you install on your system and run from the terminal. Detects threats from real macOS logs using four novel algorithms — two of which do not exist in any commercial SIEM today.
 
-> **GitHub:** [github.com/zeehawww/siem](https://github.com/zeehawww/siem)  
-> **Full technical report:** [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)
-
----
-
-## What It Does
-
-- Collects real authentication events from your Mac (ASL, wtmp, Unified Log, UDP syslog)
-- Parses every log line into a clean JSON event schema
-- Runs MITRE ATT&CK-mapped detection rules to raise alerts
-- Explains every alert in plain English — no guesswork for the analyst
-- Builds a persistent reputation score for every IP and user it has ever seen
-- Automatically writes plain-English incident reports — no manual work
+> **GitHub:** [github.com/zeehawww/siem](https://github.com/zeehawww/siem) · **Full technical report:** [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)
 
 ---
 
-## Five Novel Features
-
-| Feature | What It Does |
-|---------|-------------|
-| **Alert Explainability (XAI)** | Every alert has a "Why?" panel with exact evidence and counterfactuals |
-| **Confidence Decay Engine** | Risk scores halve every hour with no follow-up — queues stay clean automatically |
-| **Threat Narrative Generator** | Auto-writes plain-English attack stories per entity — no analyst needed |
-| **Behavioral DNA Fingerprinting** | Groups attacks by *pattern*, not identity — catches cross-entity campaigns |
-| **Analyst Feedback Loop** | Mark True/False Positive → confidence adjusts instantly, no code changes |
-
----
-
-## Quick Start
+## Install
 
 ```bash
 git clone https://github.com/zeehawww/siem.git
 cd siem
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python dashboard/app.py
+pip install -e .
 ```
 
-Open **http://127.0.0.1:5001** — real logs are collected automatically on first start.
+The `sentinel` command is now available in your terminal.
 
 ---
 
-## Tech Stack
+## Usage
 
-Python 3.9 · Flask · Vanilla HTML/CSS · Chart.js · No external APIs · Fully offline
+```bash
+sentinel collect          # pull real logs from macOS (ASL, wtmp, Unified Log)
+sentinel analyze          # run the detection pipeline
+sentinel predict          # show predicted next attack moves per entity
+sentinel status           # print current alert queue
+sentinel serve            # launch web dashboard at http://127.0.0.1:5001
+```
+
+### Example session
+
+```
+$ sentinel collect && sentinel analyze
+
+🛡  Sentinel SIEM  v1.0
+
+  ✓  Collected 84 events → logs/real_auth.log
+  ✓  84 events processed
+
+  Alerts detected:
+    [CRITICAL]  ROOT_LOGIN          Root login detected from 127.0.0.1
+    [MEDIUM]    AFTER_HOURS_LOGIN   Login by azam outside business hours
+
+$ sentinel predict
+
+  127.0.0.1  LIKELY
+    Last observed: AFTER_HOURS_LOGIN
+    → PRIV_ESC    ███░░░░░░░  35%  T1548
+    → ROOT_LOGIN  ██░░░░░░░░  28%  T1078.003
+  ·  Entropy: NORMAL  H=0.0b
+  ·  Velocity: ESCALATING  score=13
+```
 
 ---
 
-## Dashboard Pages
+## Four Novel Algorithms
 
-`Overview` · `Live Data` · `Log Explorer` · `Analysis` · `Alerts` · `Attack Chain` · `Narratives` · `Reputation` · `DNA` · `Simulator` · `Compliance` · `Full Report`
+| Algorithm | What makes it unique |
+|-----------|---------------------|
+| **Markov Next-Step Prediction** | Given the current alert, predicts the attacker's most likely next move using a MITRE ATT&CK kill-chain transition matrix — *before it happens* |
+| **Behavioral Entropy Detection** | Computes Shannon entropy H(X) of each entity's event-type distribution. Sudden entropy spikes = indicator of compromise |
+| **Attack Velocity Profiling** | Measures rate-of-change and acceleration of attacks over rolling windows. ESCALATING profile = attack is intensifying |
+| **Confidence Decay Engine** | Alert risk scores halve every hour with no follow-up — no more stale queues |
+
+None of these four exist in Splunk, IBM QRadar, or Microsoft Sentinel.
 
 ---
 
-For the full technical breakdown — algorithms, architecture, commercial SIEM comparison — see **[docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)**.
+## What it collects
+
+| Source | What it captures |
+|--------|-----------------|
+| macOS ASL (`syslog`) | Login decisions, auth events |
+| Login history (`last -w`) | Console logins, reboots |
+| Unified Log (`log show`) | sudo events, auth policy |
+| UDP syslog (port 514) | Logs forwarded from any LAN device |
+
+---
+
+## Tech stack
+
+Python 3.9 · Flask · Zero external APIs · Fully offline · `pip install`-able
+
+---
+
+For the full technical breakdown — algorithm details, architecture, MITRE mapping, commercial SIEM comparison — see **[docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)**.

@@ -1,0 +1,6 @@
+alerts
+analyzer
+collector
+dashboard
+parser
+sentinel_cli

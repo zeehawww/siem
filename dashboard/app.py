@@ -80,6 +80,22 @@ def load_predictions() -> dict:
         return json.load(f)
 
 
+# ── Routes ────────────────────────────────────────────────────────────────────
+
+@app.route("/prediction")
+def prediction():
+    """
+    Novel feature showcase: combines Markov next-step prediction,
+    behavioral entropy, and attack velocity into one clean view.
+    """
+    return render_template(
+        "prediction.html",
+        predictions=load_predictions(),
+        entropy=load_entropy(),
+        velocity=load_velocity(),
+    )
+
+
 # ── Existing routes ───────────────────────────────────────────────────────────
 
 @app.route("/")

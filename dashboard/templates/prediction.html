@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Prediction — Sentinel SIEM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .pred-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 16px;
+        }
+
+        .pred-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+        .pred-card:hover { border-color: rgba(245,158,11,0.4); }
+        .pred-card.imminent { border-left: 3px solid #ef4444; }
+        .pred-card.likely   { border-left: 3px solid #eab308; }
+        .pred-card.possible { border-left: 3px solid #6366f1; }
+
+        .pred-entity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .pred-last {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .pred-last code {
+            color: #a5b4fc;
+            font-size: 11px;
+        }
+
+        .pred-heading {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .pred-step {
+            background: rgba(245,158,11,0.05);
+            border: 1px solid rgba(245,158,11,0.15);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+        .pred-step-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fcd34d;
+        }
+        .pred-step-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .pred-step-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .pred-step-track {
+            flex: 1;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--border);
+            overflow: hidden;
+        }
+        .pred-step-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f59e0b, #fcd34d);
+        }
+        .pred-prob {
+            font-size: 11px;
+            font-weight: 700;
+            color: #fcd34d;
+            min-width: 32px;
+            text-align: right;
+        }
+        .pred-mitre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: rgba(100,116,139,0.7);
+        }
+
+        .pred-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .meta-chip {
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .risk-chip {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+        .risk-IMMINENT { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#fca5a5; }
+        .risk-LIKELY   { background:rgba(234,179,8,0.12); border:1px solid rgba(234,179,8,0.35);  color:#fde68a; }
+        .risk-POSSIBLE { background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35); color:#c7d2fe; }
+
+        .algo-box {
+            background: rgba(99,102,241,0.04);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .algo-item-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-bottom: 4px;
+        }
+        .algo-item-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+{% set active_page = 'prediction' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+    <div class="page-header">
+        <div>
+            <div class="page-title">Threat Prediction</div>
+            <p class="page-subtitle">
+                Three novel algorithms working together: Markov kill-chain next-step prediction,
+                behavioral entropy anomaly detection, and attack velocity profiling.
+            </p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div class="pill">
+                <span class="pill-dot" style="background:#f59e0b;"></span>
+                {{ predictions|length }} active entit{{ 'ies' if predictions|length != 1 else 'y' }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Algorithm explanation strip -->
+    <div class="algo-box">
+        <div>
+            <div class="algo-item-title">⚡ Markov Next-Step Prediction</div>
+            <div class="algo-item-desc">
+                Given an entity's most recent alert, a Markov transition matrix (derived from MITRE ATT&amp;CK kill-chain co-occurrences) predicts their most likely next move with probability scores.
+            </div>
+        </div>
+        <div>
+            <div class="algo-item-title">📊 Behavioral Entropy (Shannon H)</div>
+            <div class="algo-item-desc">
+                Computes H(X) = −Σ p·log₂(p) across each entity's event-type history. Low entropy = predictable (normal). A sudden spike means the entity is doing unusual things — indicator of compromise.
+            </div>
+        </div>
+        <div>
+            <div class="algo-item-title">📈 Attack Velocity Profiling</div>
+            <div class="algo-item-desc">
+                Measures the rate-of-change and acceleration of attack events over 5 / 15 / 60 minute rolling windows. An ESCALATING profile means attacks are intensifying — requires immediate response.
+            </div>
+        </div>
+    </div>
+
+    {% if predictions %}
+    <div class="pred-grid">
+        {% for entity_key, pred in predictions.items() %}
+        {% set ent  = entropy.get(entity_key) %}
+        {% set vel  = velocity.get(entity_key) %}
+        <div class="pred-card {{ pred.risk_label | lower }}">
+
+            <div class="pred-entity">{{ pred.entity }}</div>
+            <div class="pred-last">
+                Last observed: <code>{{ pred.last_observed }}</code>
+            </div>
+
+            <div class="pred-heading">⚡ Predicted Next Step</div>
+
+            {% for p in pred.predictions %}
+            <div class="pred-step">
+                <div class="pred-step-type">{{ p.next_type }}</div>
+                <div class="pred-step-desc">{{ p.description }}</div>
+                <div class="pred-step-bar-row">
+                    <div class="pred-step-track">
+                        <div class="pred-step-fill" style="width:{{ (p.probability * 100)|int }}%;"></div>
+                    </div>
+                    <span class="pred-prob">{{ (p.probability * 100)|int }}%</span>
+                    <span class="pred-mitre">{{ p.mitre }}</span>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="pred-meta">
+                <span class="risk-chip risk-{{ pred.risk_label }}">{{ pred.risk_label }}</span>
+
+                {% if ent %}
+                <span class="meta-chip" style="color:
+                    {% if ent.entropy_label == 'ANOMALOUS' %}#fca5a5
+                    {% elif ent.entropy_label == 'ELEVATED' %}#fdba74
+                    {% elif ent.entropy_label == 'MODERATE' %}#fde68a
+                    {% else %}#86efac{% endif %};">
+                    H={{ ent.entropy }}b · {{ ent.entropy_label }}
+                </span>
+                {% endif %}
+
+                {% if vel %}
+                <span class="meta-chip" style="color:
+                    {% if vel.profile == 'ESCALATING' %}#fca5a5
+                    {% elif vel.profile == 'SUSTAINED' %}#fdba74
+                    {% else %}var(--text-muted){% endif %};">
+                    {{ vel.profile }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">🔮</div>
+            No prediction data yet.<br>
+            <a href="{{ url_for('live_logs') }}" style="color:#818cf8;">Ingest events</a>
+            and run the pipeline to generate predictions.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Powered by <span>analyzer.prediction_engine</span> ·
+        <span>analyzer.entropy_engine</span> ·
+        <span>analyzer.velocity_engine</span>
+    </div>
+</div>
+
+</body>
+</html>

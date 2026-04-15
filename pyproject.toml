@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "sentinel-siem"
+version         = "1.0.0"
+description     = "Novel SIEM tool — behavioral entropy anomaly detection, Markov attack prediction, and confidence decay — for macOS system security monitoring"
+readme          = "README.md"
+requires-python = ">=3.9"
+license         = { text = "MIT" }
+
+keywords = [
+    "siem", "security", "monitoring", "threat-detection",
+    "entropy", "markov", "mitre-attack", "cybersecurity"
+]
+
+dependencies = [
+    "flask>=3.0",
+]
+
+[project.scripts]
+sentinel = "sentinel_cli:main"
+
+[tool.setuptools]
+py-modules = ["sentinel_cli"]
+
+[tool.setuptools.packages.find]
+where     = ["."]
+include   = ["collector*", "parser*", "analyzer*", "alerts*", "dashboard*"]
+
+[tool.setuptools.package-data]
+"dashboard" = ["templates/**", "static/**"]

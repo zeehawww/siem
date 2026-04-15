@@ -9,25 +9,11 @@
     </div>
 
     <div class="nav-links">
-        {# ── Operations ───────────────────────────── #}
-        <a href="{{ url_for('home') }}"      class="nav-link {% if _page == 'home'    %}nav-link-active{% endif %}">Overview</a>
-        <a href="{{ url_for('live_logs') }}" class="nav-link nav-link-live {% if _page == 'live' %}nav-link-active{% endif %}">⚡ Live</a>
-        <a href="{{ url_for('analysis') }}"  class="nav-link {% if _page == 'analysis' %}nav-link-active{% endif %}">Analysis</a>
-        <a href="{{ url_for('logs') }}"      class="nav-link {% if _page == 'logs'    %}nav-link-active{% endif %}">Logs</a>
-        <a href="{{ url_for('alerts') }}"    class="nav-link {% if _page == 'alerts'  %}nav-link-active{% endif %}">Alerts</a>
-
-        <span class="nav-sep"></span>
-
-        {# ── Intelligence ─────────────────────────── #}
-        <a href="{{ url_for('correlation') }}" class="nav-link {% if _page == 'correlation' %}nav-link-active{% endif %}">Attack Chain</a>
-        <a href="{{ url_for('narrative') }}"   class="nav-link {% if _page == 'narrative'   %}nav-link-active{% endif %}">Narratives</a>
-        <a href="{{ url_for('reputation') }}"  class="nav-link {% if _page == 'reputation'  %}nav-link-active{% endif %}">Reputation</a>
-        <a href="{{ url_for('dna_view') }}"    class="nav-link {% if _page == 'dna'         %}nav-link-active{% endif %}">DNA</a>
-
-        <span class="nav-sep"></span>
-
-        {# ── Tools ────────────────────────────────── #}
-        <a href="{{ url_for('simulator') }}"  class="nav-link {% if _page == 'simulator'  %}nav-link-active{% endif %}">Simulator</a>
-        <a href="{{ url_for('compliance') }}" class="nav-link {% if _page == 'compliance' %}nav-link-active{% endif %}">Compliance</a>
+        <a href="{{ url_for('home') }}"       class="nav-link {% if _page == 'home'       %}nav-link-active{% endif %}">Overview</a>
+        <a href="{{ url_for('live_logs') }}"  class="nav-link nav-link-live {% if _page == 'live' %}nav-link-active{% endif %}">⚡ Live</a>
+        <a href="{{ url_for('logs') }}"       class="nav-link {% if _page == 'logs'       %}nav-link-active{% endif %}">Events</a>
+        <a href="{{ url_for('alerts') }}"     class="nav-link {% if _page == 'alerts'     %}nav-link-active{% endif %}">Alerts</a>
+        <a href="{{ url_for('analysis') }}"   class="nav-link {% if _page == 'analysis'   %}nav-link-active{% endif %}">Analysis</a>
+        <a href="{{ url_for('prediction') }}" class="nav-link {% if _page == 'prediction' %}nav-link-active{% endif %}">Prediction</a>
     </div>
 </nav>
