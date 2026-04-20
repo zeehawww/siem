@@ -1,9 +1,18 @@
 README.md
+aegis_cli.py
+main.py
 pyproject.toml
-sentinel_cli.py
+aegis_siem.egg-info/PKG-INFO
+aegis_siem.egg-info/SOURCES.txt
+aegis_siem.egg-info/dependency_links.txt
+aegis_siem.egg-info/entry_points.txt
+aegis_siem.egg-info/requires.txt
+aegis_siem.egg-info/top_level.txt
 alerts/__init__.py
 alerts/alert_manager.py
 analyzer/__init__.py
+analyzer/atrs_engine.py
+analyzer/campaign_engine.py
 analyzer/detection_engine.py
 analyzer/dna_engine.py
 analyzer/entropy_engine.py
@@ -11,6 +20,7 @@ analyzer/feedback_engine.py
 analyzer/narrative_engine.py
 analyzer/prediction_engine.py
 analyzer/reputation_engine.py
+analyzer/srtc_engine.py
 analyzer/temporal_fingerprint_engine.py
 analyzer/velocity_engine.py
 collector/__init__.py
@@ -27,6 +37,7 @@ dashboard/templates/correlation.html
 dashboard/templates/dna.html
 dashboard/templates/home.html
 dashboard/templates/index.html
+dashboard/templates/intelligence.html
 dashboard/templates/live_logs.html
 dashboard/templates/logs.html
 dashboard/templates/narrative.html
@@ -36,9 +47,3 @@ dashboard/templates/reputation.html
 dashboard/templates/simulator.html
 parser/__init__.py
 parser/log_parser.py
-sentinel_siem.egg-info/PKG-INFO
-sentinel_siem.egg-info/SOURCES.txt
-sentinel_siem.egg-info/dependency_links.txt
-sentinel_siem.egg-info/entry_points.txt
-sentinel_siem.egg-info/requires.txt
-sentinel_siem.egg-info/top_level.txt

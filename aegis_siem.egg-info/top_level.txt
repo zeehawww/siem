@@ -1,6 +1,7 @@
+aegis_cli
 alerts
 analyzer
 collector
 dashboard
+main
 parser
-sentinel_cli

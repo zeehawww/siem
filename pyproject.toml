@@ -3,16 +3,16 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name            = "sentinel-siem"
+name            = "aegis-siem"
 version         = "1.0.0"
-description     = "Novel SIEM tool — behavioral entropy anomaly detection, Markov attack prediction, and confidence decay — for macOS system security monitoring"
+description     = "Novel SIEM tool with ATRS (Adaptive Threat Risk Score) — multi-dimensional entity risk scoring for macOS security monitoring"
 readme          = "README.md"
 requires-python = ">=3.9"
 license         = { text = "MIT" }
 
 keywords = [
     "siem", "security", "monitoring", "threat-detection",
-    "entropy", "markov", "mitre-attack", "cybersecurity"
+    "entropy", "markov", "mitre-attack", "cybersecurity", "atrs"
 ]
 
 dependencies = [
@@ -20,10 +20,10 @@ dependencies = [
 ]
 
 [project.scripts]
-sentinel = "sentinel_cli:main"
+aegis = "aegis_cli:main"
 
 [tool.setuptools]
-py-modules = ["sentinel_cli"]
+py-modules = ["aegis_cli", "main"]
 
 [tool.setuptools.packages.find]
 where     = ["."]
@@ -31,3 +31,4 @@ include   = ["collector*", "parser*", "analyzer*", "alerts*", "dashboard*"]
 
 [tool.setuptools.package-data]
 "dashboard" = ["templates/**", "static/**"]
+

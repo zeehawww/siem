@@ -1,8 +1,8 @@
-# Sentinel SIEM Mini — Full Project Report
+# Aegis SIEM Mini — Full Project Report
 
 ## Overview
 
-Sentinel SIEM Mini is a Security Information and Event Management platform built from scratch in Python and Flask. It ingests real macOS system logs, detects threats using MITRE ATT&CK-mapped rules, and presents findings in a professional analyst dashboard — with five detection-engineering features not found in any commercial SIEM today.
+Aegis SIEM Mini is a Security Information and Event Management platform built from scratch in Python and Flask. It ingests real macOS system logs, detects threats using MITRE ATT&CK-mapped rules, and presents findings in a professional analyst dashboard — with five detection-engineering features not found in any commercial SIEM today.
 
 ---
 

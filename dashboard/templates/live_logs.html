@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Data — Sentinel SIEM</title>
+    <title>Live Data — Aegis SIEM</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .source-grid {
@@ -114,6 +114,19 @@
             {{ total_real }} real events collected
         </div>
     </div>
+    <div class="card" style="margin-bottom:16px; padding:12px 14px;">
+        <div style="font-size:12px; color:var(--text-muted);">
+            Active pipeline mode:
+            <strong style="color:var(--text);">{{ current_mode }}</strong>
+            · Active events: <strong style="color:var(--text);">{{ active_event_count }}</strong>
+            {% if active_source_counts %}
+            · Sources:
+            {% for src, cnt in active_source_counts.items() %}
+                <span class="chip" style="margin-left:4px;">{{ src }}: {{ cnt }}</span>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
 
     <!-- Source cards -->
     <div class="source-grid">
@@ -143,21 +156,31 @@
         <div class="card" id="ingestCard">
             <div class="card-header">
                 <div>
-                    <div class="card-title">Ingest Real Logs</div>
-                    <div class="card-subtitle">Choose source mode and run the full SIEM pipeline</div>
+                    <div class="card-title">Choose Data Mode</div>
+                    <div class="card-subtitle">Run on real macOS logs, simulated demo data, or a combined dataset</div>
                 </div>
             </div>
 
             <form action="{{ url_for('ingest_real') }}" method="POST" id="ingestForm" onsubmit="startLoading()">
-                <label class="mode-option selected" onclick="selectMode(this)">
-                    <input type="radio" name="mode" value="real_only" checked>
+                <label class="mode-option {{ 'selected' if current_mode == 'real_only' else '' }}" onclick="selectMode(this)">
+                    <input type="radio" name="mode" value="real_only" {{ 'checked' if current_mode == 'real_only' else '' }}>
                     <div>
                         <div class="mode-title">🍎 Real Only — macOS System Logs</div>
                         <div class="mode-desc">Analyze only real system auth events from this machine. Clean, uncontaminated data.</div>
                     </div>
                 </label>
-                <label class="mode-option" onclick="selectMode(this)">
-                    <input type="radio" name="mode" value="combined">
+                <label class="mode-option {{ 'selected' if current_mode == 'simulated_only' else '' }}" onclick="selectMode(this)">
+                    <input type="radio" name="mode" value="simulated_only" {{ 'checked' if current_mode == 'simulated_only' else '' }}>
+                    <div>
+                        <div class="mode-title">🧪 Simulated Only — Demo Dataset</div>
+                        <div class="mode-desc">
+                            Use stable synthetic events for mentor demos (reliable BRUTE_FORCE, COMPROMISED_ACCOUNT, PRIV_ESC, ROOT_LOGIN).
+                            {% if not simulated_log_exists %}<span style="color:#fbbf24;">(demo dataset not created yet)</span>{% endif %}
+                        </div>
+                    </div>
+                </label>
+                <label class="mode-option {{ 'selected' if current_mode == 'combined' else '' }}" onclick="selectMode(this)">
+                    <input type="radio" name="mode" value="combined" {{ 'checked' if current_mode == 'combined' else '' }}>
                     <div>
                         <div class="mode-title">🔀 Combined — Real + Simulated</div>
                         <div class="mode-desc">Merge real macOS auth events with the demo dataset for richer alert coverage.</div>
@@ -167,11 +190,11 @@
                 <div style="margin-bottom:14px;">
                     <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">Look-back window</div>
                     <select name="lookback_hours" class="lookback-select">
-                        <option value="24">Last 24 hours</option>
-                        <option value="72">Last 3 days</option>
-                        <option value="168" selected>Last 7 days</option>
-                        <option value="720">Last 30 days</option>
-                        <option value="8760">Last 1 year</option>
+                        <option value="24" {{ 'selected' if current_lookback == 24 else '' }}>Last 24 hours</option>
+                        <option value="72" {{ 'selected' if current_lookback == 72 else '' }}>Last 3 days</option>
+                        <option value="168" {{ 'selected' if current_lookback == 168 else '' }}>Last 7 days</option>
+                        <option value="720" {{ 'selected' if current_lookback == 720 else '' }}>Last 30 days</option>
+                        <option value="8760" {{ 'selected' if current_lookback == 8760 else '' }}>Last 1 year</option>
                     </select>
                 </div>
 
@@ -179,6 +202,13 @@
 
                 <button class="button button-green" type="submit" id="ingestBtn" style="width:100%; justify-content:center;">
                     ⚡ Ingest &amp; Run Pipeline
+                </button>
+            </form>
+
+            <form action="{{ url_for('seed_demo') }}" method="POST" style="margin-top:10px;">
+                <input type="hidden" name="lookback_hours" value="168">
+                <button class="button button-secondary" type="submit" style="width:100%; justify-content:center;">
+                    ✨ Seed Demo Dataset (Simulated) &amp; Run
                 </button>
             </form>
         </div>
@@ -308,6 +338,8 @@
 function selectMode(el) {
     document.querySelectorAll('.mode-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
+    const radio = el.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
 }
 
 function startLoading() {

@@ -11,7 +11,7 @@ forward logs here:
   macOS:  newsyslog / logger command
   Router: syslog forwarding setting
 
-Received messages are appended to simulated_auth.log in real time and
+Received messages are appended to a configured log file in real time (e.g. network_syslog.log) and
 the pipeline is re-run automatically after a batch window.
 
 Usage (standalone):

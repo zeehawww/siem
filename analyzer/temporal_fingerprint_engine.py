@@ -36,7 +36,7 @@ Patent claim:
      fingerprint independent of source entity identity."
 
 This is novel because:
-  1. No SIEM (Splunk, QRadar, Sentinel, Elastic) includes timing in fingerprints.
+  1. No SIEM (Splunk, QRadar, Microsoft Sentinel, Elastic) includes timing in fingerprints.
   2. Separating bots from humans from stealthy probes enables targeted response.
   3. The fingerprint persists across IP changes — same human = same timing style.
 """

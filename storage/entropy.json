@@ -1,13 +1,58 @@
 {
-  "127.0.0.1": {
-    "entity": "127.0.0.1",
+  "203.0.113.42": {
+    "entity": "203.0.113.42",
+    "entropy": 0.65,
+    "entropy_label": "MODERATE",
+    "event_dist": {
+      "FAILED_LOGIN": 5,
+      "SUCCESS_LOGIN": 1
+    },
+    "dominant_type": "FAILED_LOGIN",
+    "event_count": 6,
+    "entropy_pct": 23
+  },
+  "0.0.0.0": {
+    "entity": "0.0.0.0",
     "entropy": -0.0,
     "entropy_label": "NORMAL",
     "event_dist": {
-      "SUCCESS_LOGIN": 84
+      "SUDO_USAGE": 2
+    },
+    "dominant_type": "SUDO_USAGE",
+    "event_count": 2,
+    "entropy_pct": 0
+  },
+  "198.51.100.77": {
+    "entity": "198.51.100.77",
+    "entropy": -0.0,
+    "entropy_label": "NORMAL",
+    "event_dist": {
+      "SUCCESS_LOGIN": 1
     },
     "dominant_type": "SUCCESS_LOGIN",
-    "event_count": 84,
+    "event_count": 1,
+    "entropy_pct": 0
+  },
+  "10.20.30.40": {
+    "entity": "10.20.30.40",
+    "entropy": -0.0,
+    "entropy_label": "NORMAL",
+    "event_dist": {
+      "SUCCESS_LOGIN": 1
+    },
+    "dominant_type": "SUCCESS_LOGIN",
+    "event_count": 1,
+    "entropy_pct": 0
+  },
+  "172.16.0.99": {
+    "entity": "172.16.0.99",
+    "entropy": -0.0,
+    "entropy_label": "NORMAL",
+    "event_dist": {
+      "SUCCESS_LOGIN": 1
+    },
+    "dominant_type": "SUCCESS_LOGIN",
+    "event_count": 1,
     "entropy_pct": 0
   }
 }

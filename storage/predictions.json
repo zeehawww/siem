@@ -1,6 +1,82 @@
 {
-  "127.0.0.1": {
-    "entity": "127.0.0.1",
+  "203.0.113.42": {
+    "entity": "203.0.113.42",
+    "last_observed": "COMPROMISED_ACCOUNT",
+    "predictions": [
+      {
+        "next_type": "PRIV_ESC",
+        "probability": 0.42,
+        "description": "Privilege escalation via sudo",
+        "mitre": "T1548"
+      },
+      {
+        "next_type": "ROOT_LOGIN",
+        "probability": 0.28,
+        "description": "Direct root / admin access",
+        "mitre": "T1078.003"
+      }
+    ],
+    "risk_label": "LIKELY"
+  },
+  "0.0.0.0": {
+    "entity": "0.0.0.0",
+    "last_observed": "PRIV_ESC",
+    "predictions": [
+      {
+        "next_type": "ROOT_LOGIN",
+        "probability": 0.55,
+        "description": "Direct root / admin access",
+        "mitre": "T1078.003"
+      },
+      {
+        "next_type": "COMPROMISED_ACCOUNT",
+        "probability": 0.27,
+        "description": "Account takeover / initial access",
+        "mitre": "T1078"
+      }
+    ],
+    "risk_label": "IMMINENT"
+  },
+  "198.51.100.77": {
+    "entity": "198.51.100.77",
+    "last_observed": "ROOT_LOGIN",
+    "predictions": [
+      {
+        "next_type": "PRIV_ESC",
+        "probability": 0.48,
+        "description": "Privilege escalation via sudo",
+        "mitre": "T1548"
+      },
+      {
+        "next_type": "COMPROMISED_ACCOUNT",
+        "probability": 0.32,
+        "description": "Account takeover / initial access",
+        "mitre": "T1078"
+      }
+    ],
+    "risk_label": "IMMINENT"
+  },
+  "10.20.30.40": {
+    "entity": "10.20.30.40",
+    "last_observed": "AFTER_HOURS_LOGIN",
+    "predictions": [
+      {
+        "next_type": "PRIV_ESC",
+        "probability": 0.35,
+        "description": "Privilege escalation via sudo",
+        "mitre": "T1548"
+      },
+      {
+        "next_type": "ROOT_LOGIN",
+        "probability": 0.28,
+        "description": "Direct root / admin access",
+        "mitre": "T1078.003"
+      }
+    ],
+    "risk_label": "LIKELY"
+  },
+  "172.16.0.99": {
+    "entity": "172.16.0.99",
     "last_observed": "AFTER_HOURS_LOGIN",
     "predictions": [
       {

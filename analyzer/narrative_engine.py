@@ -11,6 +11,8 @@ Patent angle: "System for automatic natural-language attack narrative
 synthesis from correlated security event sequences."
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
 from datetime import datetime
 from typing import Optional, List, Dict, Any

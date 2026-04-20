@@ -1,3 +1,13 @@
+Metadata-Version: 2.4
+Name: aegis-siem
+Version: 1.0.0
+Summary: Novel SIEM tool with ATRS (Adaptive Threat Risk Score) — multi-dimensional entity risk scoring for macOS security monitoring
+License: MIT
+Keywords: siem,security,monitoring,threat-detection,entropy,markov,mitre-attack,cybersecurity,atrs
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: flask>=3.0
+
 # Aegis SIEM
 
 > Lightweight Security Information & Event Management tool with a novel **ATRS** (Adaptive Threat Risk Score) algorithm — built for real macOS system log telemetry.

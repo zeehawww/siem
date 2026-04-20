@@ -1,37 +1,127 @@
 [
   {
-    "timestamp": "2026-04-15T08:22:58.984410Z",
-    "type": "AFTER_HOURS_LOGIN",
-    "severity": "MEDIUM",
-    "message": "Login by azam from 127.0.0.1 at hour 08:xx (outside business hours) (\u00d740 occurrences)",
+    "timestamp": "2026-04-16T04:00:55.934477Z",
+    "type": "BRUTE_FORCE",
+    "severity": "HIGH",
+    "message": "Multiple failed logins from 203.0.113.42 (\u00d73 occurrences)",
     "event": {
-      "timestamp": "Oct 2 17:22:00",
-      "hour": 17,
-      "event_type": "SUCCESS_LOGIN",
-      "username": "azam",
-      "ip": "127.0.0.1",
-      "location": "Internal",
-      "severity": "LOW",
-      "raw_log": "Oct 2 17:22:00 localsys sshd[0]: Accepted password for azam from 127.0.0.1 port 0",
-      "source": "real_system"
+      "timestamp": "Jan 27 09:10:05",
+      "hour": 9,
+      "event_type": "FAILED_LOGIN",
+      "username": "admin",
+      "ip": "203.0.113.42",
+      "location": "Russia",
+      "severity": "MEDIUM",
+      "raw_log": "Jan 27 09:10:05 demo sshd[2222]: Failed password for invalid user admin from 203.0.113.42 port 22",
+      "source": "simulated"
     },
-    "count": 40
+    "count": 3
   },
   {
-    "timestamp": "2026-04-15T08:22:58.984803Z",
+    "timestamp": "2026-04-16T04:00:55.934759Z",
+    "type": "COMPROMISED_ACCOUNT",
+    "severity": "CRITICAL",
+    "message": "Successful login after failures from 203.0.113.42",
+    "event": {
+      "timestamp": "Jan 27 09:11:10",
+      "hour": 9,
+      "event_type": "SUCCESS_LOGIN",
+      "username": "admin",
+      "ip": "203.0.113.42",
+      "location": "Russia",
+      "severity": "LOW",
+      "raw_log": "Jan 27 09:11:10 demo sshd[2222]: Accepted password for admin from 203.0.113.42 port 22",
+      "source": "simulated"
+    },
+    "count": 1
+  },
+  {
+    "timestamp": "2026-04-16T04:00:55.934889Z",
+    "type": "PRIV_ESC",
+    "severity": "HIGH",
+    "message": "Sudo used by admin (\u00d72 occurrences)",
+    "event": {
+      "timestamp": "Jan 27 09:12:20",
+      "hour": 9,
+      "event_type": "SUDO_USAGE",
+      "username": "admin",
+      "ip": "0.0.0.0",
+      "location": "Local",
+      "severity": "HIGH",
+      "raw_log": "Jan 27 09:12:20 demo sudo: admin : TTY=pts/0 ; COMMAND=/usr/bin/id",
+      "source": "simulated"
+    },
+    "count": 2
+  },
+  {
+    "timestamp": "2026-04-16T04:00:55.935009Z",
     "type": "ROOT_LOGIN",
     "severity": "CRITICAL",
-    "message": "Root login detected from 127.0.0.1",
+    "message": "Root login detected from 198.51.100.77",
     "event": {
-      "timestamp": "Mar 2 00:47:00",
-      "hour": 0,
+      "timestamp": "Jan 27 09:13:00",
+      "hour": 9,
       "event_type": "SUCCESS_LOGIN",
       "username": "root",
-      "ip": "127.0.0.1",
+      "ip": "198.51.100.77",
+      "location": "China",
+      "severity": "LOW",
+      "raw_log": "Jan 27 09:13:00 demo sshd[3333]: Accepted password for root from 198.51.100.77 port 22",
+      "source": "simulated"
+    },
+    "count": 1
+  },
+  {
+    "timestamp": "2026-04-16T04:00:55.935145Z",
+    "type": "AFTER_HOURS_LOGIN",
+    "severity": "MEDIUM",
+    "message": "Login by developer from 10.20.30.40 at hour 22:xx (outside business hours)",
+    "event": {
+      "timestamp": "Jan 27 22:45:00",
+      "hour": 22,
+      "event_type": "SUCCESS_LOGIN",
+      "username": "developer",
+      "ip": "10.20.30.40",
       "location": "Internal",
       "severity": "LOW",
-      "raw_log": "Mar 2 00:47:00 localsys sshd[0]: Accepted password for root from 127.0.0.1 port 0",
-      "source": "real_system"
+      "raw_log": "Jan 27 22:45:00 demo sshd[4444]: Accepted password for developer from 10.20.30.40 port 22",
+      "source": "simulated"
+    },
+    "count": 1
+  },
+  {
+    "timestamp": "2026-04-16T04:00:55.935277Z",
+    "type": "NEW_IP_FOR_USER",
+    "severity": "MEDIUM",
+    "message": "User developer logged in from new IP 172.16.0.99 (previously seen: 10.20.30.40)",
+    "event": {
+      "timestamp": "Jan 27 22:46:10",
+      "hour": 22,
+      "event_type": "SUCCESS_LOGIN",
+      "username": "developer",
+      "ip": "172.16.0.99",
+      "location": "Internal",
+      "severity": "LOW",
+      "raw_log": "Jan 27 22:46:10 demo sshd[4444]: Accepted password for developer from 172.16.0.99 port 22",
+      "source": "simulated"
+    },
+    "count": 1
+  },
+  {
+    "timestamp": "2026-04-16T04:00:55.935412Z",
+    "type": "AFTER_HOURS_LOGIN",
+    "severity": "MEDIUM",
+    "message": "Login by developer from 172.16.0.99 at hour 22:xx (outside business hours)",
+    "event": {
+      "timestamp": "Jan 27 22:46:10",
+      "hour": 22,
+      "event_type": "SUCCESS_LOGIN",
+      "username": "developer",
+      "ip": "172.16.0.99",
+      "location": "Internal",
+      "severity": "LOW",
+      "raw_log": "Jan 27 22:46:10 demo sshd[4444]: Accepted password for developer from 172.16.0.99 port 22",
+      "source": "simulated"
     },
     "count": 1
   }

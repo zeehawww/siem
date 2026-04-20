@@ -1,14 +1,16 @@
 """
-sentinel_cli.py — Command-line interface for Sentinel SIEM tool
+aegis_cli.py — Command-line interface for Aegis SIEM tool
 
 Install:  pip install -e .
-Usage:    sentinel <command>
+Usage:    aegis <command>
 
 Commands:
   collect   — Pull real system logs (macOS ASL, wtmp, Unified Log)
   analyze   — Run the full detection pipeline
-  predict   — Show Markov next-step attack predictions (terminal output)
-  status    — Print current alerts and their confidence-decayed scores
+  atrs      — Show ATRS entity risk scores (patent algorithm)
+  srtc      — Show SRTC sequence-resonance risk scores (new algorithm)
+  predict   — Show Markov next-step attack predictions
+  status    — Print current alerts with decayed risk scores
   serve     — Launch the web dashboard at http://127.0.0.1:5001
   help      — Show this help
 """
@@ -68,7 +70,7 @@ def _load_json(filename):
 
 def cmd_collect(args):
     """Collect real system logs into logs/real_auth.log."""
-    _section("Sentinel — Collect")
+    _section("Aegis — Collect")
     try:
         from collector.macos_log_collector import write_real_logs_to_file
         log_path = os.path.join(_ROOT, "logs", "real_auth.log")
@@ -81,7 +83,7 @@ def cmd_collect(args):
 
 def cmd_analyze(args):
     """Run the full detection pipeline and print results."""
-    _section("Sentinel — Analyze")
+    _section("Aegis — Analyze")
     print(f"  {DIM}Running pipeline: collect → parse → detect → enrich …{RESET}")
     try:
         import main as pipeline
@@ -117,14 +119,14 @@ def cmd_analyze(args):
 
 def cmd_predict(args):
     """Print Markov next-step predictions for all active threat entities."""
-    _section("Sentinel — Threat Prediction (Markov + TBF)")
+    _section("Aegis — Threat Prediction (Markov + TBF)")
     preds    = _load_json("predictions.json")
     entropy  = _load_json("entropy.json")  or {}
     velocity = _load_json("velocity.json") or {}
     tbf      = _load_json("tbf.json")      or {}
 
     if not preds:
-        _warn("No predictions yet. Run:  sentinel analyze")
+        _warn("No predictions yet. Run:  aegis analyze")
         return
 
     for entity, pred in preds.items():
@@ -163,14 +165,112 @@ def cmd_predict(args):
             _info(f"Actor type: {_col(actor, acolour)}  cadence={cadence}  TBF={tbfp}")
 
 
+def cmd_atrs(args):
+    """Compute and display ATRS entity risk scores (patent algorithm)."""
+    _section("Aegis — ATRS (Adaptive Threat Risk Score)")
+    print(f"  {DIM}Fusing: Velocity · Entropy · Reputation · Temporal · Prediction{RESET}")
+    print(f"  {DIM}Adjustments: time-decay × feedback × cluster-boost{RESET}")
+    print()
+
+    try:
+        from analyzer.atrs_engine import compute_all_atrs
+        from analyzer.reputation_engine import get_reputation
+
+        velocity    = _load_json("velocity.json") or {}
+        entropy     = _load_json("entropy.json") or {}
+        predictions = _load_json("predictions.json") or {}
+        tbf         = _load_json("tbf.json") or {}
+        alerts      = _load_json("alerts.json") or []
+        rep_data    = get_reputation()
+
+        scores = compute_all_atrs(
+            velocity_data=velocity,
+            entropy_data=entropy,
+            reputation_data=rep_data,
+            tbf_data=tbf,
+            predictions=predictions,
+            alerts=alerts,
+            feedback_data=[],
+        )
+
+        if not scores:
+            _warn("No entity data yet. Run:  aegis analyze")
+            return
+
+        # Header
+        header = f"  {'#':>3}  {'ENTITY':<25} {'ATRS':>6}  {'RISK':<10}  {'V':>4} {'E':>4} {'R':>4} {'T':>4} {'P':>4}  MODIFIERS"
+        print(_col(header, DIM))
+        print("  " + "─" * 96)
+
+        for i, r in enumerate(scores, 1):
+            sev = r["risk_label"]
+            colour = _severity_colour(sev)
+            c = r["components"]
+            m = r["modifiers"]
+            mods = []
+            if m["decay"] < 0.9:
+                mods.append(f"decay={m['decay']}")
+            if m["feedback_mod"] != 1.0:
+                mods.append(f"fb={m['feedback_mod']}")
+            if m["cluster_boost"] > 1.0:
+                mods.append(f"cluster={m['cluster_boost']}")
+            mod_str = "  ".join(mods) if mods else "—"
+
+            print(
+                f"  {_col(str(i), DIM):>3}"
+                f"  {r['entity']:<25}"
+                f" {_col(str(r['atrs_score']), colour):>6}"
+                f"  {_col(sev, colour):<10}"
+                f"  {c['V']:>4.0f} {c['E']:>4.0f} {c['R']:>4.0f} {c['T']:>4.0f} {c['P']:>4.0f}"
+                f"  {DIM}{mod_str}{RESET}"
+            )
+
+        print()
+        print(f"  {DIM}Components: V=Velocity  E=Entropy  R=Reputation  T=Temporal  P=Prediction{RESET}")
+        print(f"  {DIM}Formula: ATRS = (0.25V + 0.20E + 0.25R + 0.15T + 0.15P) × decay × fb × cluster{RESET}")
+        _ok(f"{len(scores)} entities scored.")
+
+    except Exception as exc:
+        _err(f"ATRS computation failed: {exc}")
+        sys.exit(1)
+
+
+def cmd_srtc(args):
+    """Display SRTC (Sequence Resonance Threat Coefficient) scores."""
+    _section("Aegis — SRTC (Sequence Resonance Threat Coefficient)")
+    srtc = _load_json("srtc.json")
+    if not srtc:
+        _warn("No SRTC data yet. Run:  aegis analyze")
+        return
+
+    rows = sorted(srtc.values(), key=lambda r: r.get("srtc_score", 0), reverse=True)
+    header = f"  {'#':>3}  {'ENTITY':<25} {'SRTC':>6}  {'LABEL':<10}  {'SMR':>5} {'TRR':>5} {'TSD':>5}  EVENTS"
+    print(_col(header, DIM))
+    print("  " + "─" * 92)
+    for i, r in enumerate(rows, 1):
+        label = r.get("label", "LOW")
+        colour = _severity_colour(label)
+        print(
+            f"  {_col(str(i), DIM):>3}  "
+            f"{r.get('entity',''):<25} "
+            f"{_col(str(r.get('srtc_score',0)), colour):>6}  "
+            f"{_col(label, colour):<10}  "
+            f"{r.get('smr',0):>5} {r.get('trr',0):>5} {r.get('tsd',0):>5}  "
+            f"{r.get('event_count',0)}"
+        )
+    print()
+    _info("Formula: 100*(0.45*SMR + 0.25*TRR + 0.30*TSD)")
+    _info("SMR=Sequence Motif Resonance, TRR=Temporal Rhythm Regularity, TSD=Transition Surprise Divergence")
+
+
 def cmd_status(args):
     """Print current alert queue with decayed risk scores."""
-    _section("Sentinel — Status")
+    _section("Aegis — Status")
     alerts = _load_json("alerts.json")
     events = _load_json("events.json") or []
 
     if alerts is None:
-        _warn("No data. Run:  sentinel analyze")
+        _warn("No data. Run:  aegis analyze")
         return
 
     print(f"  Events in store : {_bold(str(len(events)))}")
@@ -209,7 +309,7 @@ def cmd_status(args):
 
 def cmd_serve(args):
     """Start the web dashboard."""
-    _section("Sentinel — Dashboard")
+    _section("Aegis — Dashboard")
     _ok("Starting on http://127.0.0.1:5001")
     _info("Press Ctrl+C to stop")
     print()
@@ -219,29 +319,31 @@ def cmd_serve(args):
 
 def cmd_help(args):
     print(f"""
-{BOLD}{WHITE}Sentinel SIEM — Command-line Tool{RESET}
+{BOLD}{WHITE}Aegis SIEM — Security Monitoring Tool{RESET}
 
 {BOLD}Usage:{RESET}
-  sentinel <command>
+  aegis <command>
 
 {BOLD}Commands:{RESET}
   {_col('collect', GREEN)}   Collect real system logs from macOS (ASL, wtmp, Unified Log)
   {_col('analyze', GREEN)}   Run the full detection pipeline (parse, detect, enrich, predict)
+  {_col('atrs',    PURPLE)}      Compute ATRS entity risk scores (★ novel patent algorithm)
+  {_col('srtc',    PURPLE)}      Compute SRTC sequence-resonance scores (★ original algorithm)
   {_col('predict', YELLOW)}   Show Markov next-step attack predictions per threat entity
   {_col('status',  CYAN)}    Print current alert queue with decayed risk scores
   {_col('serve',   BLUE)}    Launch the web dashboard at http://127.0.0.1:5001
 
-{BOLD}Novel Algorithms:{RESET}
-  {_col('Markov Next-Step Prediction', PURPLE)}   — Predicts attacker's next move from MITRE ATT&CK kill-chain model
-  {_col('Behavioral Entropy (Shannon H)', PURPLE)} — Flags compromised accounts via event-type distribution entropy
-  {_col('Attack Velocity Profiling', PURPLE)}     — Computes rate-of-change and acceleration of attack intensity
-  {_col('Confidence Decay Engine', PURPLE)}       — Alert risk scores halve every hour with no follow-up activity
+{BOLD}Patent Algorithm — ATRS (Adaptive Threat Risk Score):{RESET}
+  Fuses 5 behavioral dimensions per entity into a single auditable score:
+  {PURPLE}V{RESET}elocity · {PURPLE}E{RESET}ntropy · {PURPLE}R{RESET}eputation · {PURPLE}T{RESET}emporal anomaly · {PURPLE}P{RESET}rediction
+  Adjusted by: exponential time-decay × analyst feedback × DNA cluster boost
 
 {BOLD}Examples:{RESET}
-  sentinel collect && sentinel analyze
-  sentinel predict
-  sentinel status
-  sentinel serve
+  aegis collect && aegis analyze   {DIM}# ingest + process logs{RESET}
+  aegis atrs                          {DIM}# view ATRS entity scores{RESET}
+  aegis predict                       {DIM}# view Markov predictions{RESET}
+  aegis status                        {DIM}# view alert queue{RESET}
+  aegis serve                         {DIM}# open web dashboard{RESET}
 """)
 
 
@@ -250,6 +352,8 @@ def cmd_help(args):
 _COMMANDS = {
     "collect": cmd_collect,
     "analyze": cmd_analyze,
+    "atrs":    cmd_atrs,
+    "srtc":    cmd_srtc,
     "predict": cmd_predict,
     "status":  cmd_status,
     "serve":   cmd_serve,
@@ -258,11 +362,11 @@ _COMMANDS = {
 
 
 def main():
-    print(f"\n{BOLD}{WHITE}🛡  Sentinel SIEM{RESET}  {DIM}v1.0{RESET}\n")
+    print(f"\n{BOLD}{WHITE}🛡  Aegis SIEM{RESET}  {DIM}v1.0{RESET}\n")
 
     parser = argparse.ArgumentParser(
-        prog="sentinel",
-        description="Sentinel SIEM — novel security monitoring tool",
+        prog="aegis",
+        description="Aegis SIEM — novel security monitoring tool",
         add_help=False,
     )
     parser.add_argument("command", nargs="?", default="help",

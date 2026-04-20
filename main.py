@@ -11,18 +11,26 @@ from analyzer.velocity_engine          import compute_velocity_profiles
 from analyzer.entropy_engine           import compute_entropy_scores
 from analyzer.prediction_engine        import predict_next_steps
 from analyzer.temporal_fingerprint_engine import compute_temporal_fingerprints
+from analyzer.srtc_engine import compute_srtc_scores
 
 # Make paths independent of the current working directory
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+_ACTIVE_LOG   = os.path.join(BASE_DIR, "logs", "active_auth.log")
 _REAL_LOG     = os.path.join(BASE_DIR, "logs", "real_auth.log")
 _SIM_LOG      = os.path.join(BASE_DIR, "logs", "simulated_auth.log")
-# ── Prefer live macOS logs; fall back to simulation only if real log absent ──
-LOG_FILE      = _REAL_LOG if os.path.exists(_REAL_LOG) else _SIM_LOG
+# ── Prefer explicitly selected active log if present ─────────────────────────
+# The dashboard can generate `logs/active_auth.log` for:
+#   - real only
+#   - simulated only
+#   - combined (real + simulated + optional syslog)
+# If absent, fall back to real logs (if present) else simulated.
+LOG_FILE      = _ACTIVE_LOG if os.path.exists(_ACTIVE_LOG) else (_REAL_LOG if os.path.exists(_REAL_LOG) else _SIM_LOG)
 STORAGE_FILE     = os.path.join(BASE_DIR, "storage", "events.json")
 VELOCITY_FILE    = os.path.join(BASE_DIR, "storage", "velocity.json")
 ENTROPY_FILE     = os.path.join(BASE_DIR, "storage", "entropy.json")
 PREDICTIONS_FILE = os.path.join(BASE_DIR, "storage", "predictions.json")
 TBF_FILE         = os.path.join(BASE_DIR, "storage", "tbf.json")
+SRTC_FILE        = os.path.join(BASE_DIR, "storage", "srtc.json")
 
 
 def _save_json(data: object, path: str) -> None:
@@ -97,6 +105,11 @@ def run_pipeline(log_file: str = None) -> None:
     # ── Novel: Markov Next-Step Attack Prediction ─────────────────────────────────
     # Predicts the most likely next attack move per entity from kill-chain model.
     _save_json(predict_next_steps(persisted_alerts), PREDICTIONS_FILE)
+
+    # ── Novel: SRTC (Sequence Resonance Threat Coefficient) ──────────────────────
+    # Original algorithm: sequence motif resonance + timing regularity + transition
+    # surprise divergence from global baseline.
+    _save_json(compute_srtc_scores(normalized_events), SRTC_FILE)
 
     # ── Persist normalized events ─────────────────────────────────────────────────
     with open(STORAGE_FILE, "w") as f:

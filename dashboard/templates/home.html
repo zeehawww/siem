@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel SIEM — Security Operations Center</title>
-    <meta name="description" content="Professional Security Information and Event Management platform with real-time log ingestion, threat detection, behavioral analytics, and automated incident narratives.">
+    <title>Aegis SIEM — Security Operations Center</title>
+    <meta name="description" content="Aegis SIEM: real-time macOS log analysis, MITRE ATT&CK threat detection, and ATRS entity risk scoring.">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .stat-card {
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 22px 20px;
+            padding: 20px 18px 16px;
             position: relative;
             overflow: hidden;
             transition: border-color 0.2s, transform 0.2s;
@@ -32,77 +32,35 @@
         .stat-card.s-indigo::before   { background: linear-gradient(90deg, transparent, #6366f1, transparent); }
 
         .stat-num {
-            font-size: 38px;
+            font-size: 36px;
             font-weight: 800;
             letter-spacing: -0.03em;
             line-height: 1.1;
         }
-        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; letter-spacing: 0.03em; }
-        .stat-icon { font-size: 22px; margin-bottom: 10px; opacity: 0.8; }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        .stat-icon  { font-size: 20px; margin-bottom: 8px; opacity: 0.8; }
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 14px;
-            margin-top: 10px;
-        }
-        .feature-item {
+        /* Quick action row */
+        .action-row {
             display: flex;
-            align-items: flex-start;
             gap: 12px;
-            padding: 14px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            padding: 16px 18px;
             background: var(--surface-2);
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            color: inherit;
-        }
-        .feature-item:hover {
-            border-color: rgba(99,102,241,0.4);
-            background: rgba(99,102,241,0.06);
-            transform: translateX(2px);
-        }
-        .feature-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
         }
-        .fi-blue   { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
-        .fi-purple { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); }
-        .fi-green  { background: rgba(34,197,94,0.12);  border: 1px solid rgba(34,197,94,0.3); }
-        .fi-orange { background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); }
-        .fi-red    { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3); }
-        .fi-teal   { background: rgba(20,184,166,0.12); border: 1px solid rgba(20,184,166,0.3); }
+        .action-row-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            flex: 1;
+        }
+        .action-row-label strong { color: var(--text); }
 
-        .feature-content h3 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
-        .feature-content p  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-        .feature-content .tag-novel {
-            display: inline-block;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 1px 6px;
-            border-radius: 4px;
-            background: rgba(99,102,241,0.2);
-            border: 1px solid rgba(99,102,241,0.4);
-            color: #a5b4fc;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
-
-        .pipeline-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-        .pipeline-step {
+        /* Recent alerts mini list */
+        .alert-mini {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -110,46 +68,67 @@
             border-bottom: 1px solid var(--border);
             font-size: 13px;
         }
-        .pipeline-step:last-child { border-bottom: none; }
-        .step-num {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(99,102,241,0.2);
-            border: 1px solid rgba(99,102,241,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
-            color: #a5b4fc;
-            flex-shrink: 0;
-        }
-        .step-content strong { color: var(--text); }
-        .step-content span   { color: var(--text-muted); font-size: 12px; }
+        .alert-mini:last-child { border-bottom: none; }
+        .alert-mini-type { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .alert-mini-ts   { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
 
-        .live-banner {
-            background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(16,185,129,0.04));
-            border: 1px solid rgba(34,197,94,0.2);
-            border-radius: var(--radius);
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .live-banner-left {
+        /* Top attackers */
+        .attacker-row {
             display: flex;
             align-items: center;
             gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
             font-size: 13px;
         }
-        .live-banner strong { color: #86efac; }
+        .attacker-row:last-child { border-bottom: none; }
+        .attacker-ip  { font-family: 'JetBrains Mono', monospace; font-size: 12px; flex: 1; }
+        .attacker-count { font-weight: 700; color: #f97316; min-width: 30px; text-align: right; }
+        .attacker-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+        .attacker-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #f97316); border-radius: 999px; }
+
+        /* Pipeline steps */
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .pipeline-step:last-child { border-bottom: none; }
+        .step-num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: rgba(99,102,241,0.2);
+            border: 1px solid rgba(99,102,241,0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700; color: #a5b4fc;
+            flex-shrink: 0;
+        }
+
+        /* Status row */
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        .status-row:last-child { border-bottom: none; }
+        .status-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-online { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+        .status-ready  { background: #6366f1; box-shadow: 0 0 6px rgba(99,102,241,0.5); }
+        .status-off    { background: rgba(100,116,139,0.4); }
 
         @keyframes glow-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
-            50%       { box-shadow: 0 0 20px 4px rgba(99,102,241,0.2); }
+            50%       { box-shadow: 0 0 20px 4px rgba(99,102,241,0.15); }
         }
     </style>
 </head>
@@ -160,31 +139,12 @@
 
 <div class="page-shell">
 
-    <!-- Live data banner -->
-    <div class="live-banner">
-        <div class="live-banner-left">
-            <span style="font-size:20px;">🍎</span>
-            <div>
-                <strong>macOS System Logs Connected</strong>
-                <span style="color:var(--text-muted);"> — This SIEM ingests real authentication events from your machine's ASL database, login history (wtmp), and Unified Log.</span>
-            </div>
-        </div>
-        <form action="{{ url_for('ingest_real') }}" method="POST" style="flex-shrink:0;">
-            <input type="hidden" name="mode" value="real_only">
-            <input type="hidden" name="lookback_hours" value="168">
-            <button class="button button-green" type="submit" style="font-size:12px; padding:8px 16px;">
-                ⚡ Ingest Live Data
-            </button>
-        </form>
-    </div>
-
     <!-- Page header -->
-    <div class="page-header">
+    <div class="page-header" style="margin-bottom: 20px;">
         <div>
             <div class="page-title">Security Operations Center</div>
             <p class="page-subtitle">
-                Real-time threat detection from live macOS system events — no mock data required.
-                MITRE ATT&amp;CK mapped alerts with explainability, behavioral analytics, and incident narratives.
+                Real-time threat detection · macOS system log telemetry · MITRE ATT&amp;CK mapped alerts
             </p>
         </div>
         <div class="pill">
@@ -193,9 +153,28 @@
         </div>
     </div>
 
-    <!-- Key metrics row -->
-    <div class="grid grid-4" style="margin-bottom:24px;" id="stats-grid">
-        <!-- Will be filled by JS from API, fallback to static -->
+    <!-- Quick action bar -->
+    <div class="action-row">
+        <div class="action-row-label">
+            <strong>🍎 macOS Log Collector</strong> —
+            Pull fresh auth events from ASL, login history (wtmp), and Unified Log.
+        </div>
+        <form action="{{ url_for('ingest_real') }}" method="POST" style="display:inline;">
+            <input type="hidden" name="mode" value="real_only">
+            <input type="hidden" name="lookback_hours" value="168">
+            <button class="button button-green" type="submit" id="btn-ingest-live" style="font-size:12px; padding:8px 16px;">
+                ⚡ Ingest Live Logs
+            </button>
+        </form>
+        <form action="{{ url_for('run_analysis') }}" method="GET" style="display:inline;">
+            <button class="button button-secondary" type="submit" id="btn-run-pipeline" style="font-size:12px; padding:8px 16px;">
+                ▶ Run Pipeline
+            </button>
+        </form>
+    </div>
+
+    <!-- Key metrics -->
+    <div class="grid grid-4" style="margin-bottom: 24px;" id="stats-grid">
         <div class="stat-card s-indigo">
             <div class="stat-icon">📋</div>
             <div class="stat-num" id="stat-events">—</div>
@@ -218,179 +197,139 @@
         </div>
     </div>
 
-    <!-- Hero grid: features + pipeline -->
-    <div class="hero">
-        <div class="hero-text">
-            <h1>From system logs to<br>actionable threat intelligence.</h1>
-            <p>
-                A full SIEM pipeline — collect, parse, detect, correlate and respond —
-                running on your real macOS auth events with advanced novel engines that rival enterprise solutions.
-            </p>
-
-            <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap;">
-                <a href="{{ url_for('live_logs') }}" class="button">⚡ Ingest Real Logs</a>
-                <a href="{{ url_for('alerts') }}" class="button button-secondary">View Alerts →</a>
+    <!-- What this means -->
+    <div class="card card-muted" style="margin-bottom: 20px;">
+        <div class="card-header">
+            <div class="card-title">How To Read This Dashboard</div>
+            <div class="card-subtitle">Quick guide for first-time users</div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px;">
+            <div style="padding:10px; border:1px solid var(--border); border-radius:8px; background:rgba(13,23,41,0.6);">
+                <div style="font-size:12px; font-weight:700; margin-bottom:4px;">1) Start with Live Data</div>
+                <div style="font-size:12px; color:var(--text-muted);">Use <strong>Ingest Live Logs</strong> to collect events from this machine or network syslog.</div>
             </div>
+            <div style="padding:10px; border:1px solid var(--border); border-radius:8px; background:rgba(13,23,41,0.6);">
+                <div style="font-size:12px; font-weight:700; margin-bottom:4px;">2) Run detection pipeline</div>
+                <div style="font-size:12px; color:var(--text-muted);">Click <strong>Run Pipeline</strong> to parse, detect, map MITRE techniques, and score risk.</div>
+            </div>
+            <div style="padding:10px; border:1px solid var(--border); border-radius:8px; background:rgba(13,23,41,0.6);">
+                <div style="font-size:12px; font-weight:700; margin-bottom:4px;">3) Investigate results</div>
+                <div style="font-size:12px; color:var(--text-muted);">Check <strong>Alerts</strong> for why alerts fired, and <strong>Intelligence</strong> for ATRS/SRTC predictions.</div>
+            </div>
+        </div>
+    </div>
 
-            <!-- Feature grid -->
-            <div class="feature-grid">
-                <a href="{{ url_for('logs') }}" class="feature-item">
-                    <div class="feature-icon fi-blue">📋</div>
-                    <div class="feature-content">
-                        <h3>Log Explorer</h3>
-                        <p>Searchable, filterable normalized events with CSV export.</p>
-                    </div>
-                </a>
-                <a href="{{ url_for('analysis') }}" class="feature-item">
-                    <div class="feature-icon fi-indigo" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);">📊</div>
-                    <div class="feature-content">
-                        <h3>Detection & Trends</h3>
-                        <p>Severity breakdown, top attackers, event-type metrics.</p>
-                    </div>
-                </a>
-                <a href="{{ url_for('alerts') }}" class="feature-item">
-                    <div class="feature-icon fi-red">🔔</div>
-                    <div class="feature-content">
-                        <h3>Alert Queue</h3>
-                        <p>MITRE-mapped alerts with XAI explainability & confidence decay.</p>
-                        <span class="tag-novel">Novel</span>
-                    </div>
-                </a>
-                <a href="{{ url_for('narrative') }}" class="feature-item">
-                    <div class="feature-icon fi-purple">📖</div>
-                    <div class="feature-content">
-                        <h3>Threat Narratives</h3>
-                        <p>Auto-generated plain-English attack stories per entity.</p>
-                        <span class="tag-novel">Novel</span>
-                    </div>
-                </a>
-                <a href="{{ url_for('reputation') }}" class="feature-item">
-                    <div class="feature-icon fi-orange">🔥</div>
-                    <div class="feature-content">
-                        <h3>Reputation Heat Score</h3>
-                        <p>Persistent behavioral reputation built from observed alerts.</p>
-                        <span class="tag-novel">Novel</span>
-                    </div>
-                </a>
-                <a href="{{ url_for('dna_view') }}" class="feature-item">
-                    <div class="feature-icon fi-teal">🧬</div>
-                    <div class="feature-content">
-                        <h3>Alert DNA Fingerprinting</h3>
-                        <p>Groups alerts by behavioral pattern rather than entity identity.</p>
-                        <span class="tag-novel">Novel</span>
-                    </div>
-                </a>
-                <a href="{{ url_for('correlation') }}" class="feature-item">
-                    <div class="feature-icon fi-blue">🔗</div>
-                    <div class="feature-content">
-                        <h3>Attack Chain</h3>
-                        <p>Visualize brute-force → compromise → privilege escalation chains.</p>
-                    </div>
-                </a>
-                <a href="{{ url_for('simulator') }}" class="feature-item">
-                    <div class="feature-icon fi-orange">🎯</div>
-                    <div class="feature-content">
-                        <h3>What-If Simulator</h3>
-                        <p>Test detection coverage against any MITRE ATT&CK technique.</p>
-                        <span class="tag-novel">Novel</span>
-                    </div>
-                </a>
-                <a href="{{ url_for('compliance') }}" class="feature-item">
-                    <div class="feature-icon fi-green">📑</div>
-                    <div class="feature-content">
-                        <h3>Compliance Report</h3>
-                        <p>Audit-ready summaries with one-click PDF/CSV export.</p>
-                    </div>
-                </a>
+    <!-- Main two-column layout -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 18px;">
+
+        <!-- Left: Recent critical alerts -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Recent Alerts</div>
+                <a href="{{ url_for('alerts') }}" class="button button-secondary" style="font-size:11px; padding:4px 12px;">View All →</a>
+            </div>
+            <div id="recent-alerts-list">
+                <div class="empty-state" style="padding: 30px 16px;">
+                    <div class="empty-state-icon">⏳</div>
+                    <div>Loading alerts…</div>
+                </div>
             </div>
         </div>
 
-        <!-- Right column -->
-        <div class="hero-aside">
+        <!-- Right: System status + pipeline -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+
+            <!-- System status -->
             <div class="card">
-                <div class="hero-aside-title">SIEM Pipeline Stages</div>
-                <div class="pipeline-steps">
-                    <div class="pipeline-step">
-                        <div class="step-num">1</div>
-                        <div class="step-content"><strong>Collect</strong><br><span>macOS ASL, wtmp, Unified Log &amp; UDP syslog</span></div>
-                    </div>
-                    <div class="pipeline-step">
-                        <div class="step-num">2</div>
-                        <div class="step-content"><strong>Parse</strong><br><span>Normalize to JSON: timestamp, user, IP, type</span></div>
-                    </div>
-                    <div class="pipeline-step">
-                        <div class="step-num">3</div>
-                        <div class="step-content"><strong>Detect</strong><br><span>Rule engine with UEBA, MITRE mapping, decay</span></div>
-                    </div>
-                    <div class="pipeline-step">
-                        <div class="step-num">4</div>
-                        <div class="step-content"><strong>Enrich</strong><br><span>DNA fingerprinting &amp; reputation scoring</span></div>
-                    </div>
-                    <div class="pipeline-step">
-                        <div class="step-num">5</div>
-                        <div class="step-content"><strong>Narrate</strong><br><span>Auto-generate plain-English attack stories</span></div>
-                    </div>
-                    <div class="pipeline-step">
-                        <div class="step-num">6</div>
-                        <div class="step-content"><strong>Respond</strong><br><span>Analyst feedback loop adjusts future confidence</span></div>
-                    </div>
+                <div class="card-title" style="margin-bottom: 12px;">System Status</div>
+                <div class="status-row">
+                    <div class="status-dot status-online"></div>
+                    <div style="flex:1;">Flask Dashboard</div>
+                    <div style="font-size:11px; color:#86efac;">Online</div>
+                </div>
+                <div class="status-row">
+                    <div class="status-dot status-ready"></div>
+                    <div style="flex:1;">Detection Engine</div>
+                    <div style="font-size:11px; color:#a5b4fc;">Ready</div>
+                </div>
+                <div class="status-row">
+                    <div class="status-dot status-ready"></div>
+                    <div style="flex:1;">ATRS Algorithm</div>
+                    <div style="font-size:11px; color:#a5b4fc;">Active</div>
+                </div>
+                <div class="status-row" id="syslog-status-row">
+                    <div class="status-dot status-off" id="syslog-dot"></div>
+                    <div style="flex:1;">UDP Syslog Listener</div>
+                    <div style="font-size:11px; color:var(--text-muted);" id="syslog-status-text">—</div>
                 </div>
             </div>
 
-            <div class="card card-muted" style="border-style:solid;">
-                <div class="hero-aside-title">Real Data Sources</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
-                        <span style="font-size:18px;">🍎</span>
-                        <div>
-                            <div style="font-weight:600; color:var(--text);">macOS ASL Database</div>
-                            <div style="font-size:11px; color:var(--text-muted);">Auth events via <code>syslog -k Facility auth</code></div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
-                        <span style="font-size:18px;">📋</span>
-                        <div>
-                            <div style="font-weight:600; color:var(--text);">Login History (wtmp)</div>
-                            <div style="font-size:11px; color:var(--text-muted);">Console &amp; TTY sessions via <code>last -w</code></div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
-                        <span style="font-size:18px;">📡</span>
-                        <div>
-                            <div style="font-weight:600; color:var(--text);">Network Syslog Listener</div>
-                            <div style="font-size:11px; color:var(--text-muted);">UDP RFC 3164 from any networked device</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
-                        <span style="font-size:18px;">🔍</span>
-                        <div>
-                            <div style="font-weight:600; color:var(--text);">macOS Unified Log</div>
-                            <div style="font-size:11px; color:var(--text-muted);">sudo &amp; auth policy via <code>log show</code></div>
-                        </div>
-                    </div>
+            <!-- Pipeline stages -->
+            <div class="card">
+                <div class="card-title" style="margin-bottom: 12px;">Detection Pipeline</div>
+                <div class="pipeline-step">
+                    <div class="step-num">1</div>
+                    <div><strong style="font-size:13px;">Collect</strong><br><span style="font-size:11px; color:var(--text-muted);">macOS ASL · wtmp · Unified Log</span></div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-num">2</div>
+                    <div><strong style="font-size:13px;">Parse</strong><br><span style="font-size:11px; color:var(--text-muted);">Normalise to JSON events</span></div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-num">3</div>
+                    <div><strong style="font-size:13px;">Detect</strong><br><span style="font-size:11px; color:var(--text-muted);">Rule engine + MITRE mapping + decay</span></div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-num">4</div>
+                    <div><strong style="font-size:13px;">Score</strong><br><span style="font-size:11px; color:var(--text-muted);">ATRS composite risk per entity</span></div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-num">5</div>
+                    <div><strong style="font-size:13px;">Narrate</strong><br><span style="font-size:11px; color:var(--text-muted);">Auto-generate attack stories</span></div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="card card-muted" style="border-style:solid;">
-                <div class="hero-aside-title">vs. Commercial SIEMs</div>
-                <div style="font-size:12px; color:var(--text-muted); line-height:1.8;">
-                    <div>✅ <strong style="color:var(--text);">Alert Explainability (XAI)</strong> — Splunk & QRadar have none</div>
-                    <div>✅ <strong style="color:var(--text);">Confidence Decay Engine</strong> — No SIEM ages alerts automatically</div>
-                    <div>✅ <strong style="color:var(--text);">Auto Threat Narratives</strong> — Analysts write these manually today</div>
-                    <div>✅ <strong style="color:var(--text);">Behavioral DNA Groups</strong> — Pattern-based, not entity-based dedup</div>
-                    <div>✅ <strong style="color:var(--text);">Analyst Feedback Loop</strong> — Adjusts confidence without retraining</div>
+    <!-- Bottom row: Top attackers + ATRS top entities -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px;">
+
+        <!-- Top attacker IPs -->
+        <div class="card" id="top-attackers-card">
+            <div class="card-header">
+                <div class="card-title">Top Threat Sources</div>
+                <span class="badge badge-pill">By failed logins</span>
+            </div>
+            <div id="top-attackers-list">
+                <div class="empty-state" style="padding: 24px;">
+                    <div class="empty-state-icon" style="font-size:22px;">🌐</div>
+                    <div>No attacker data yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ATRS top risk entities -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Highest Risk Entities (ATRS)</div>
+                <a href="{{ url_for('intelligence') }}" class="button button-secondary" style="font-size:11px; padding:4px 12px;">Full View →</a>
+            </div>
+            <div id="top-atrs-list">
+                <div class="empty-state" style="padding: 24px;">
+                    <div class="empty-state-icon" style="font-size:22px;">🧮</div>
+                    <div>No ATRS data yet — run the pipeline</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        Sentinel SIEM · Built with <span>Python + Flask</span> · Real macOS system log telemetry
+        Aegis SIEM · Python + Flask · Real macOS telemetry · ATRS Algorithm v1.0
     </div>
 </div>
 
 <script>
-// Load live stats from API and animate in
+// ── Fetch and render dashboard stats + recent alerts ────────────────────────
 async function loadStats() {
     try {
         const res = await fetch('/api/dashboard-stats');
@@ -411,9 +350,102 @@ async function loadStats() {
         }
     } catch(e) { /* silent */ }
 }
+
+async function loadRecentAlerts() {
+    try {
+        const res = await fetch('/api/recent-alerts');
+        if (!res.ok) return;
+        const alerts = await res.json();
+        const container = document.getElementById('recent-alerts-list');
+        if (!alerts.length) {
+            container.innerHTML = '<div class="empty-state" style="padding:24px;"><div class="empty-state-icon">✅</div><div>No alerts yet — ingest logs to start</div></div>';
+            return;
+        }
+        container.innerHTML = alerts.slice(0, 6).map(a => {
+            const sev = (a.severity || 'LOW').toLowerCase();
+            const sevColors = { critical:'#ef4444', high:'#f97316', medium:'#eab308', low:'#22c55e' };
+            const color = sevColors[sev] || '#94a3b8';
+            return `<div class="alert-mini">
+                <div class="severity-dot ${sev}"></div>
+                <div class="alert-mini-type">${escHtml(a.type || a.message || 'Unknown')}</div>
+                <span class="badge badge-${sev}" style="flex-shrink:0;">${(a.severity || 'LOW').toUpperCase()}</span>
+                <div class="alert-mini-ts">${escHtml((a.timestamp || '').slice(11, 19))}</div>
+            </div>`;
+        }).join('');
+    } catch(e) { /* silent */ }
+}
+
+async function loadTopAttackers() {
+    try {
+        const res = await fetch('/api/top-attackers');
+        if (!res.ok) return;
+        const data = await res.json();
+        const container = document.getElementById('top-attackers-list');
+        if (!data.length) return;
+        const max = data[0][1] || 1;
+        container.innerHTML = data.map(([ip, cnt]) =>
+            `<div class="attacker-row">
+                <div class="attacker-ip">${escHtml(ip)}</div>
+                <div class="attacker-bar"><div class="attacker-bar-fill" style="width:${Math.round(cnt/max*100)}%;"></div></div>
+                <div class="attacker-count">${cnt}</div>
+            </div>`
+        ).join('');
+    } catch(e) { /* silent */ }
+}
+
+async function loadTopAtrs() {
+    try {
+        const res = await fetch('/api/atrs-top');
+        if (!res.ok) return;
+        const rows = await res.json();
+        const container = document.getElementById('top-atrs-list');
+        if (!rows.length) return;
+        const sevColors = { critical:'#ef4444', high:'#f97316', medium:'#eab308', low:'#22c55e' };
+        container.innerHTML = rows.slice(0, 5).map((r, i) => {
+            const color = r.color || sevColors[(r.risk_label||'').toLowerCase()] || '#94a3b8';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;color:var(--text-muted);width:18px;text-align:center;">#${i+1}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.entity)}</div>
+                <div style="width:60px;height:3px;background:rgba(255,255,255,0.07);border-radius:999px;overflow:hidden;flex-shrink:0;">
+                    <div style="width:${r.atrs_score}%;height:100%;background:${color};border-radius:999px;"></div>
+                </div>
+                <div style="font-weight:800;font-size:14px;color:${color};min-width:36px;text-align:right;">${r.atrs_score}</div>
+            </div>`;
+        }).join('');
+    } catch(e) { /* silent */ }
+}
+
+async function loadSyslogStatus() {
+    try {
+        const res = await fetch('/api/syslog-status');
+        if (!res.ok) return;
+        const d = await res.json();
+        const dot  = document.getElementById('syslog-dot');
+        const text = document.getElementById('syslog-status-text');
+        if (d.running) {
+            dot.className  = 'status-dot status-online';
+            text.textContent = 'Listening';
+            text.style.color = '#86efac';
+        } else {
+            dot.className  = 'status-dot status-off';
+            text.textContent = 'Stopped';
+            text.style.color = 'var(--text-muted)';
+        }
+    } catch(e) { /* silent */ }
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Boot
 loadStats();
-// Auto-refresh every 30 seconds
+loadRecentAlerts();
+loadTopAttackers();
+loadTopAtrs();
+loadSyslogStatus();
 setInterval(loadStats, 30000);
+setInterval(loadRecentAlerts, 30000);
 </script>
 
 </body>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligence — Aegis SIEM</title>
+    <meta name="description" content="Unified threat intelligence: ATRS entity risk scores, threat narratives, and next-step predictions for every observed entity.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ── ATRS Leaderboard ─────────────────────────────────────── */
+        .atrs-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            transition: border-color 0.2s, background 0.2s;
+            margin-bottom: 8px;
+        }
+        .atrs-row:hover {
+            border-color: rgba(99,102,241,0.3);
+            background: rgba(99,102,241,0.04);
+        }
+        .atrs-rank {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .atrs-entity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .atrs-score-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .atrs-bar-outer {
+            width: 90px;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.07);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .atrs-bar-inner {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+        .atrs-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 42px;
+            text-align: right;
+        }
+        .atrs-label {
+            min-width: 68px;
+        }
+        /* ── Component radar ──────────────────────────────────────── */
+        .component-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .comp-pill {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(13,23,41,0.9);
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .comp-pill.hot { border-color: rgba(239,68,68,0.4); color: #fca5a5; background: rgba(239,68,68,0.08); }
+        .comp-pill.warm { border-color: rgba(249,115,22,0.4); color: #fdba74; background: rgba(249,115,22,0.08); }
+        /* ── Narrative cards ──────────────────────────────────────── */
+        .narrative-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .narrative-card:hover { border-color: rgba(99,102,241,0.3); }
+        .narrative-entity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .narrative-text {
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text);
+        }
+        .narrative-steps {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .narrative-step {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.3);
+            color: #a5b4fc;
+        }
+        /* ── Prediction row ───────────────────────────────────────── */
+        .pred-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            gap: 12px;
+        }
+        .pred-row:last-child { border-bottom: none; }
+        .pred-entity { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 120px; }
+        .pred-next { font-weight: 600; flex: 1; }
+        .pred-conf { font-size: 12px; color: var(--text-muted); min-width: 50px; text-align: right; }
+        /* ── Explanation drawer ───────────────────────────────────── */
+        .atrs-explanation {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-top: 4px;
+            display: none;
+            padding: 8px 0 0 36px;
+        }
+        .atrs-row.expanded .atrs-explanation { display: block; }
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .expand-btn:hover { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+        /* ── Section selector ─────────────────────────────────────── */
+        .tab-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+    </style>
+</head>
+<body>
+
+{% set active_page = 'intelligence' %}
+{% include '_navbar.html' %}
+
+<div class="page-shell">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">Intelligence Hub</div>
+            <p class="page-subtitle">
+                ATRS entity risk scores · Threat narratives · Predictive next-step analysis.
+                Powered by the Adaptive Threat Risk Score algorithm.
+            </p>
+        </div>
+        <div class="pill">
+            <span class="pill-dot"></span>
+            {{ atrs_scores | length }} entities tracked
+        </div>
+    </div>
+
+    <!-- Tab selector -->
+    <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('atrs', this)" id="tab-atrs">Entity Risk (ATRS)</button>
+        <button class="tab-btn" onclick="switchTab('srtc', this)" id="tab-srtc">Sequence Risk (SRTC)</button>
+        <button class="tab-btn" onclick="switchTab('narratives', this)" id="tab-narratives">Threat Narratives</button>
+        <button class="tab-btn" onclick="switchTab('predictions', this)" id="tab-predictions">Predictions</button>
+    </div>
+
+    <!-- ── TAB 1: ATRS Leaderboard ──────────────────────────────────── -->
+    <div class="tab-panel active" id="panel-atrs">
+
+        <!-- ATRS explainer card -->
+        <div class="card card-muted" style="border-style:solid; margin-bottom:20px;">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="font-size:28px; flex-shrink:0;">🧮</div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text);">
+                        Adaptive Threat Risk Score (ATRS)
+                        <span class="badge badge-pill" style="margin-left:8px;">Novel Algorithm</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); line-height:1.8;">
+                        Fuses <strong style="color:var(--text);">5 behavioral dimensions</strong> per entity:
+                        <strong style="color:#a5b4fc;">V</strong>elocity ·
+                        <strong style="color:#a5b4fc;">E</strong>ntropy ·
+                        <strong style="color:#a5b4fc;">R</strong>eputation ·
+                        <strong style="color:#a5b4fc;">T</strong>emporal anomaly ·
+                        <strong style="color:#a5b4fc;">P</strong>rediction confidence —
+                        then applies exponential time-decay, analyst feedback adjustment,
+                        and DNA cluster amplification into a single auditable score (0–100).
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px; font-family:'JetBrains Mono',monospace;">
+                        ATRS = (0.25·V + 0.20·E + 0.25·R + 0.15·T + 0.15·P) × decay × feedback_mod × cluster_boost
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if atrs_scores %}
+            <div style="margin-bottom:8px;">
+                <div class="section-title">ENTITY RISK LEADERBOARD</div>
+            </div>
+            {% for item in atrs_scores %}
+            <div class="atrs-row" id="atrs-row-{{ loop.index }}" onclick="toggleExpand({{ loop.index }})">
+                <div class="atrs-rank">#{{ loop.index }}</div>
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="atrs-entity">{{ item.entity }}</div>
+                        <div class="atrs-score-wrap">
+                            <div class="atrs-bar-outer">
+                                <div class="atrs-bar-inner" style="width:{{ item.atrs_score }}%; background:{{ item.color }};"></div>
+                            </div>
+                            <div class="atrs-num" style="color:{{ item.color }};">{{ item.atrs_score }}</div>
+                            <span class="badge badge-{{ item.risk_label | lower }} atrs-label">{{ item.risk_label }}</span>
+                        </div>
+                        <button class="expand-btn" title="Show breakdown">▸</button>
+                    </div>
+                    <!-- Component pills -->
+                    <div class="component-pills">
+                        <span class="comp-pill {% if item.components.V >= 60 %}hot{% elif item.components.V >= 40 %}warm{% endif %}">V:{{ item.components.V }}</span>
+                        <span class="comp-pill {% if item.components.E >= 60 %}hot{% elif item.components.E >= 40 %}warm{% endif %}">E:{{ item.components.E }}</span>
+                        <span class="comp-pill {% if item.components.R >= 60 %}hot{% elif item.components.R >= 40 %}warm{% endif %}">R:{{ item.components.R }}</span>
+                        <span class="comp-pill {% if item.components.T >= 60 %}hot{% elif item.components.T >= 40 %}warm{% endif %}">T:{{ item.components.T }}</span>
+                        <span class="comp-pill {% if item.components.P >= 60 %}hot{% elif item.components.P >= 40 %}warm{% endif %}">P:{{ item.components.P }}</span>
+                        {% if item.hours_silent > 0 %}
+                        <span class="comp-pill" style="opacity:0.7;">⏱ {{ item.hours_silent }}h ago</span>
+                        {% endif %}
+                    </div>
+                    <!-- Expandable explanation -->
+                    <div class="atrs-explanation" id="atrs-expl-{{ loop.index }}">
+                        {{ item.explanation }}<br>
+                        <span style="opacity:0.65;">
+                            Decay: {{ item.modifiers.decay }} ·
+                            Feedback: {{ item.modifiers.feedback_mod }} ·
+                            Cluster: {{ item.modifiers.cluster_boost }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🧮</div>
+                    <div>No entity data yet</div>
+                    <div style="font-size:12px; opacity:0.6;">Ingest logs from the Dashboard to populate ATRS scores.</div>
+                    <a href="{{ url_for('home') }}" class="button" style="margin-top:12px;">Go to Dashboard</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ── TAB 1.5: SRTC Leaderboard ───────────────────────────────── -->
+    <div class="tab-panel" id="panel-srtc">
+        <div class="card card-muted" style="border-style:solid; margin-bottom:20px;">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="font-size:26px; flex-shrink:0;">🧠</div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text);">
+                        SRTC — Sequence Resonance Threat Coefficient
+                        <span class="badge badge-pill" style="margin-left:8px;">New Algorithm</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); line-height:1.8;">
+                        SRTC detects attack-like behavior by combining:
+                        <strong style="color:#a5b4fc;">SMR</strong> (risky event sequence motifs),
+                        <strong style="color:#a5b4fc;">TRR</strong> (machine-like timing regularity),
+                        and <strong style="color:#a5b4fc;">TSD</strong> (how unusual transitions are vs baseline).
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px; font-family:'JetBrains Mono',monospace;">
+                        SRTC = 100 * (0.45*SMR + 0.25*TRR + 0.30*TSD)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if srtc %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">SRTC Entity Scores</div>
+                    <div class="card-subtitle">Higher score means sequence/timing is more threat-like</div>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Entity</th>
+                                <th>SRTC</th>
+                                <th>Risk</th>
+                                <th>SMR</th>
+                                <th>TRR</th>
+                                <th>TSD</th>
+                                <th>Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entity, row in srtc.items()|sort(attribute='1.srtc_score', reverse=true) %}
+                            <tr>
+                                <td style="font-family:'JetBrains Mono',monospace;">{{ row.entity }}</td>
+                                <td style="font-weight:800;">{{ row.srtc_score }}</td>
+                                <td><span class="badge badge-{{ row.label | lower }}">{{ row.label }}</span></td>
+                                <td>{{ row.smr }}</td>
+                                <td>{{ row.trr }}</td>
+                                <td>{{ row.tsd }}</td>
+                                <td>{{ row.event_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🧠</div>
+                    <div>No SRTC data yet</div>
+                    <div style="font-size:12px; opacity:0.6;">Run the pipeline to compute SRTC scores.</div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ── TAB 2: Threat Narratives ─────────────────────────────────── -->
+    <div class="tab-panel" id="panel-narratives">
+        {% if narratives %}
+            <div class="section-title" style="margin-bottom:14px;">AUTOMATED THREAT NARRATIVES</div>
+            {% for n in narratives %}
+            <div class="narrative-card">
+                <div class="narrative-entity">🎯 {{ n.entity }}</div>
+                <div class="narrative-text">{{ n.summary }}</div>
+                {% if n.chain %}
+                <div style="margin-top:8px; font-size:12px; color:#a5b4fc;">
+                    Attack pattern: {{ n.chain }}
+                </div>
+                {% endif %}
+                {% if n.sentences %}
+                <div class="narrative-steps">
+                    {% for step in n.sentences %}
+                    <span class="narrative-step">{{ step }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if n.mitre_techniques %}
+                <div class="tag-row" style="margin-top:10px;">
+                    {% for tech in n.mitre_techniques %}
+                    <span class="tag">MITRE: {{ tech }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📖</div>
+                    <div>No narratives generated yet</div>
+                    <div style="font-size:12px; opacity:0.6;">Run the detection pipeline to generate threat stories.</div>
+                    <a href="{{ url_for('home') }}" class="button" style="margin-top:12px;">Go to Dashboard</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ── TAB 3: Predictions ───────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-predictions">
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap:18px;">
+
+            <!-- Markov predictions -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Markov Next-Step Predictions</div>
+                    <span class="badge badge-pill">ML</span>
+                </div>
+                {% if predictions %}
+                    {% for entity, pred in predictions.items() %}
+                    {% set top = pred.predictions[0] if pred.predictions else none %}
+                    {% if top %}
+                    <div class="pred-row">
+                        <div class="pred-entity">{{ entity }}</div>
+                        <div class="pred-next">→ {{ top.next_type | replace('_', ' ') }}</div>
+                        <div class="pred-conf">{{ (top.probability * 100) | round(0) | int }}%</div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" style="padding:24px;">
+                        <div class="empty-state-icon" style="font-size:22px;">🔮</div>
+                        <div>No predictions yet</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Entropy scores -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Behavioral Entropy</div>
+                    <span class="badge badge-pill" title="Shannon entropy of event-type distribution">H(X)</span>
+                </div>
+                {% if entropy %}
+                    {% for entity, profile in entropy.items() %}
+                    <div class="pred-row">
+                        <div class="pred-entity">{{ entity }}</div>
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div class="atrs-bar-outer" style="width:70px; flex-shrink:0;">
+                                    <div class="atrs-bar-inner" style="width:{{ [profile.entropy / 3 * 100, 100] | min | round(0) }}%; background: {% if profile.entropy > 2 %}#ef4444{% elif profile.entropy > 1 %}#f97316{% else %}#22c55e{% endif %};"></div>
+                                </div>
+                                <span style="font-size:12px; font-family:'JetBrains Mono',monospace;">{{ profile.entropy | round(2) }}</span>
+                            </div>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted);">{{ profile.entropy_label | default('') }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" style="padding:24px;">
+                        <div class="empty-state-icon" style="font-size:22px;">📊</div>
+                        <div>No entropy data yet</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Velocity profiles -->
+        {% if velocity %}
+        <div class="card" style="margin-top:18px;">
+            <div class="card-header">
+                <div class="card-title">Attack Velocity Profiles</div>
+                <span class="badge badge-pill">Events/min</span>
+            </div>
+            <div class="table-wrapper" style="max-height:280px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Entity</th>
+                            <th>Velocity (5m)</th>
+                            <th>Score</th>
+                            <th>Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entity, profile in velocity.items() %}
+                        <tr>
+                            <td style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ entity }}</td>
+                            <td>
+                                <span style="font-weight:700; color:{% if profile.velocity_5m > 3 %}#ef4444{% elif profile.velocity_5m > 1 %}#f97316{% else %}#22c55e{% endif %};">
+                                    {{ profile.velocity_5m | round(2) }}
+                                </span>
+                            </td>
+                            <td>{{ profile.velocity_score }}</td>
+                            <td>
+                                <span class="badge badge-pill">
+                                    {{ profile.profile | default('Normal') }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        Aegis SIEM — Intelligence Hub · ATRS Algorithm v1.0
+    </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    btn.classList.add('active');
+}
+
+function toggleExpand(idx) {
+    const row  = document.getElementById('atrs-row-'  + idx);
+    const expl = document.getElementById('atrs-expl-' + idx);
+    const btn  = row.querySelector('.expand-btn');
+    const expanded = row.classList.toggle('expanded');
+    if (expl) expl.style.display = expanded ? 'block' : 'none';
+    if (btn)  btn.textContent = expanded ? '▾' : '▸';
+}
+
+// Animate ATRS bars on load
+window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.atrs-bar-inner').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => { bar.style.width = w; }, 80);
+    });
+});
+</script>
+
+</body>
+</html>

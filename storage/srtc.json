@@ -1,0 +1,57 @@
+{
+  "203.0.113.42": {
+    "entity": "203.0.113.42",
+    "srtc_score": 82.7,
+    "label": "CRITICAL",
+    "smr": 1.0,
+    "trr": 0.308,
+    "tsd": 1.0,
+    "event_count": 6,
+    "last_event_type": "SUCCESS_LOGIN",
+    "formula": "100*(0.45*SMR + 0.25*TRR + 0.30*TSD)"
+  },
+  "admin": {
+    "entity": "admin",
+    "srtc_score": 30.0,
+    "label": "LOW",
+    "smr": 0.0,
+    "trr": 0.0,
+    "tsd": 1.0,
+    "event_count": 2,
+    "last_event_type": "SUDO_USAGE",
+    "formula": "100*(0.45*SMR + 0.25*TRR + 0.30*TSD)"
+  },
+  "198.51.100.77": {
+    "entity": "198.51.100.77",
+    "srtc_score": 30.0,
+    "label": "LOW",
+    "smr": 0.0,
+    "trr": 0.0,
+    "tsd": 1.0,
+    "event_count": 1,
+    "last_event_type": "SUCCESS_LOGIN",
+    "formula": "100*(0.45*SMR + 0.25*TRR + 0.30*TSD)"
+  },
+  "10.20.30.40": {
+    "entity": "10.20.30.40",
+    "srtc_score": 30.0,
+    "label": "LOW",
+    "smr": 0.0,
+    "trr": 0.0,
+    "tsd": 1.0,
+    "event_count": 1,
+    "last_event_type": "SUCCESS_LOGIN",
+    "formula": "100*(0.45*SMR + 0.25*TRR + 0.30*TSD)"
+  },
+  "172.16.0.99": {
+    "entity": "172.16.0.99",
+    "srtc_score": 30.0,
+    "label": "LOW",
+    "smr": 0.0,
+    "trr": 0.0,
+    "tsd": 1.0,
+    "event_count": 1,
+    "last_event_type": "SUCCESS_LOGIN",
+    "formula": "100*(0.45*SMR + 0.25*TRR + 0.30*TSD)"
+  }
+}

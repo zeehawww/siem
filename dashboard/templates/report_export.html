@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIEM Security Report — {{ report_id }}</title>
+    <title>Aegis SIEM Security Report — {{ report_id }}</title>
     <style>
         /* ── Reset & Base ─────────────────────────────────────────────── */
         *,
@@ -527,8 +527,8 @@
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <div class="cover">
             <div class="cover-top">
-                <div class="org-name">Mini SIEM &nbsp;·&nbsp; Security Operations</div>
-                <div class="classification">Confidential — Internal Use Only</div>
+                <div class="org-name">Aegis SIEM &nbsp;·&nbsp; Security Operations</div>
+                <div class="classification">Academic Demonstration</div>
             </div>
             <div class="report-title">Security Incident &amp; Event Report</div>
             <div class="report-subtitle">Authentication, Privilege Escalation &amp; Threat Intelligence Summary</div>
@@ -548,6 +548,10 @@
                 <div class="cover-meta-item">
                     <span class="cover-meta-label">Alerts Raised</span>
                     <span class="cover-meta-value">{{ total_alerts }}</span>
+                </div>
+                <div class="cover-meta-item">
+                    <span class="cover-meta-label">Data Mode</span>
+                    <span class="cover-meta-value">{{ ingest_mode }}</span>
                 </div>
             </div>
         </div>
@@ -587,6 +591,7 @@
             <div class="exec-summary">
                 During this audit window, <strong>{{ total_events }} security events</strong> were observed
                 originating from <strong>{{ unique_ips }} unique source IPs</strong>.
+                Data ingestion mode: <strong>{{ ingest_mode }}</strong> (sources: <strong>{{ src_summary }}</strong>).
                 The analysis engine raised <strong>{{ total_alerts }} alerts</strong>, of which
                 <strong>{{ critical_alerts | length }}</strong> were classified as <strong>HIGH or CRITICAL</strong>
                 severity, requiring immediate review.
@@ -875,10 +880,60 @@
                 {% endif %}
             </div>
 
+            <!-- ── SECTION 8: Alert Register (All Severities) ─────────────── -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-num">08</span>
+                    <span class="section-title">Alert Register (All Severities)</span>
+                </div>
+                {% if all_alerts %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:140px;">Timestamp</th>
+                            <th style="width:90px;">Severity</th>
+                            <th>Alert Type</th>
+                            <th>MITRE Technique</th>
+                            <th class="text-right" style="width:70px;">Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in all_alerts %}
+                        <tr>
+                            <td style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#64748b;">
+                                {{ a.timestamp or "—" }}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ a.severity | lower }}">{{ a.severity }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ a.type.replace("_", " ").title() }}</strong><br>
+                                <span style="color:#64748b;">{{ a.message }}</span>
+                            </td>
+                            <td>
+                                {% if a.mitre_technique %}
+                                <code>{{ a.mitre_technique }}</code>
+                                <span style="color:#94a3b8; font-size:11px;"> {{ a.mitre_tactic }}</span>
+                                {% else %}
+                                <span style="color:#94a3b8;">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <span class="risk-chip risk-{{ a.risk_score }}">{{ a.risk_score }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty">No alerts available for this report window.</div>
+                {% endif %}
+            </div>
+
             <!-- ── Footer ─────────────────────────────────────────────────── -->
             <div class="report-footer">
                 <span>Report ID: {{ report_id }} &nbsp;·&nbsp; Generated: {{ generated_at }}</span>
-                <span>CONFIDENTIAL — For internal audit and compliance use only.</span>
+                <span>ACADEMIC DEMO — Includes MITRE technique and risk score per alert.</span>
             </div>
 
         </div><!-- /content -->

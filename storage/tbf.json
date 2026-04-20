@@ -1,88 +1,86 @@
 {
-  "127.0.0.1": {
-    "entity": "127.0.0.1",
-    "event_count": 84,
+  "203.0.113.42": {
+    "entity": "203.0.113.42",
+    "event_count": 6,
     "timing_profile": [
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
-      "SLOW",
+      "HUMAN",
+      "HUMAN",
+      "HUMAN",
+      "HUMAN",
       "SLOW"
     ],
-    "dominant_cadence": "SLOW",
-    "actor_type": "STEALTHY_PROBE",
-    "actor_description": "Attack pattern consistent with an evasive slow-scan probe. Long gaps (>30s) are designed to evade rate-limit detection.",
-    "tbf_fingerprint": "4c077536",
+    "dominant_cadence": "HUMAN",
+    "actor_type": "HUMAN_OPERATOR",
+    "actor_description": "Attack pattern consistent with a human operator at a keyboard. Inter-event gaps of 1\u201330s indicate deliberate, manual actions.",
+    "tbf_fingerprint": "07058838",
     "timing_stats": {
-      "min_gap_ms": 60000.0,
-      "max_gap_ms": 21234540000.0,
-      "mean_gap_ms": 886625070.4
+      "min_gap_ms": 1000.0,
+      "max_gap_ms": 65000.0,
+      "mean_gap_ms": 13800.0
+    }
+  },
+  "0.0.0.0": {
+    "entity": "0.0.0.0",
+    "event_count": 2,
+    "timing_profile": [
+      "HUMAN"
+    ],
+    "dominant_cadence": "HUMAN",
+    "actor_type": "HUMAN_OPERATOR",
+    "actor_description": "Attack pattern consistent with a human operator at a keyboard. Inter-event gaps of 1\u201330s indicate deliberate, manual actions.",
+    "tbf_fingerprint": "36d712ac",
+    "timing_stats": {
+      "min_gap_ms": 18000.0,
+      "max_gap_ms": 18000.0,
+      "mean_gap_ms": 18000.0
+    }
+  },
+  "198.51.100.77": {
+    "entity": "198.51.100.77",
+    "event_count": 1,
+    "timing_profile": [
+      "SINGLE"
+    ],
+    "dominant_cadence": "INSTANT",
+    "actor_type": "AUTOMATED_SCRIPT",
+    "actor_description": "Attack pattern consistent with a bot or automated script. Extremely fast inter-event timing (<1s) suggests no human in the loop.",
+    "tbf_fingerprint": "a67bd8c8",
+    "timing_stats": {
+      "min_gap_ms": 0,
+      "max_gap_ms": 0,
+      "mean_gap_ms": 0
+    }
+  },
+  "10.20.30.40": {
+    "entity": "10.20.30.40",
+    "event_count": 1,
+    "timing_profile": [
+      "SINGLE"
+    ],
+    "dominant_cadence": "INSTANT",
+    "actor_type": "AUTOMATED_SCRIPT",
+    "actor_description": "Attack pattern consistent with a bot or automated script. Extremely fast inter-event timing (<1s) suggests no human in the loop.",
+    "tbf_fingerprint": "a67bd8c8",
+    "timing_stats": {
+      "min_gap_ms": 0,
+      "max_gap_ms": 0,
+      "mean_gap_ms": 0
+    }
+  },
+  "172.16.0.99": {
+    "entity": "172.16.0.99",
+    "event_count": 1,
+    "timing_profile": [
+      "SINGLE"
+    ],
+    "dominant_cadence": "INSTANT",
+    "actor_type": "AUTOMATED_SCRIPT",
+    "actor_description": "Attack pattern consistent with a bot or automated script. Extremely fast inter-event timing (<1s) suggests no human in the loop.",
+    "tbf_fingerprint": "a67bd8c8",
+    "timing_stats": {
+      "min_gap_ms": 0,
+      "max_gap_ms": 0,
+      "mean_gap_ms": 0
     }
   }
 }

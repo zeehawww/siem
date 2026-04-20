@@ -11,6 +11,7 @@ import threading
 import time
 from collections import Counter
 from datetime import datetime, timezone
+from pathlib import Path
 
 # Ensure the project root (one level up from this file) is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,18 +30,123 @@ from collector.syslog_listener     import start_listener_thread, stop_listener, 
 from analyzer.velocity_engine   import compute_velocity_profiles
 from analyzer.entropy_engine    import compute_entropy_scores
 from analyzer.prediction_engine import predict_next_steps
+from analyzer.atrs_engine       import compute_all_atrs
 
 app = Flask(__name__)
 
 EVENT_FILE    = os.path.join(PROJECT_ROOT, "storage", "events.json")
 ALERTS_FILE   = os.path.join(PROJECT_ROOT, "storage", "alerts.json")
-LOG_FILE      = os.path.join(PROJECT_ROOT, "logs", "simulated_auth.log")
+SIM_LOG_FILE  = os.path.join(PROJECT_ROOT, "logs", "simulated_auth.log")
 REAL_LOG_FILE = os.path.join(PROJECT_ROOT, "logs", "real_auth.log")
+SYSLOG_LOG_FILE  = os.path.join(PROJECT_ROOT, "logs", "network_syslog.log")
+ACTIVE_LOG_FILE  = os.path.join(PROJECT_ROOT, "logs", "active_auth.log")
 COMBINED_LOG     = os.path.join(PROJECT_ROOT, "logs", "combined_auth.log")
 VELOCITY_FILE    = os.path.join(PROJECT_ROOT, "storage", "velocity.json")
 ENTROPY_FILE     = os.path.join(PROJECT_ROOT, "storage", "entropy.json")
 PREDICTIONS_FILE = os.path.join(PROJECT_ROOT, "storage", "predictions.json")
 TBF_FILE         = os.path.join(PROJECT_ROOT, "storage", "tbf.json")
+SRTC_FILE        = os.path.join(PROJECT_ROOT, "storage", "srtc.json")
+
+INGEST_CONFIG_FILE = os.path.join(PROJECT_ROOT, "storage", "ingest_config.json")
+
+
+def _ensure_simulated_dataset_exists() -> None:
+    """
+    Ensure the demo dataset exists so 'simulated_only' and 'combined' modes work.
+    We keep this file as a stable demo corpus; it should not be overwritten by
+    real logs or network syslog ingestion.
+    """
+    Path(os.path.dirname(SIM_LOG_FILE)).mkdir(parents=True, exist_ok=True)
+    if os.path.exists(SIM_LOG_FILE) and os.path.getsize(SIM_LOG_FILE) > 0:
+        return
+    samples = [
+        "Jan 27 11:00:01 demo sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22",
+        "Jan 27 11:00:05 demo sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22",
+        "Jan 27 11:00:10 demo sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22",
+        "Jan 27 11:00:15 demo sshd[3333]: Accepted password for backup from 203.0.113.42 port 22",
+        "Jan 27 11:01:00 demo sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id",
+        "Jan 27 12:00:01 demo sshd[4444]: Accepted password for developer from 172.16.0.99 port 22",
+        "Jan 27 12:05:00 demo sshd[4444]: Accepted password for developer from 10.20.30.40 port 22",
+        "Jan 27 12:01:00 demo sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow",
+    ]
+    with open(SIM_LOG_FILE, "w") as f:
+        for line in samples:
+            f.write(line + "\n")
+
+
+def _write_active_log(mode: str) -> None:
+    """
+    Build logs/active_auth.log deterministically from selected sources.
+
+    Modes:
+      - real_only:      REAL only
+      - simulated_only: SIM only (demo corpus + optional network syslog)
+      - combined:       REAL + SIM + optional network syslog
+    """
+    _ensure_simulated_dataset_exists()
+
+    lines: list[str] = []
+    if mode in ("simulated_only", "combined"):
+        if os.path.exists(SIM_LOG_FILE):
+            with open(SIM_LOG_FILE) as f:
+                lines += f.readlines()
+        if os.path.exists(SYSLOG_LOG_FILE):
+            with open(SYSLOG_LOG_FILE) as f:
+                lines += f.readlines()
+
+    if mode in ("real_only", "combined"):
+        if os.path.exists(REAL_LOG_FILE):
+            with open(REAL_LOG_FILE) as f:
+                lines += f.readlines()
+
+    seen = set()
+    unique: list[str] = []
+    for l in lines:
+        if l not in seen:
+            seen.add(l)
+            unique.append(l)
+
+    Path(os.path.dirname(ACTIVE_LOG_FILE)).mkdir(parents=True, exist_ok=True)
+    with open(ACTIVE_LOG_FILE, "w") as f:
+        f.writelines(unique)
+
+
+def _seed_simulated_demo(overwrite: bool = True) -> int:
+    """
+    Write a deterministic, mentor-friendly simulated dataset that reliably triggers:
+    - brute force
+    - compromised account
+    - sudo / privilege escalation
+    - root login
+    - new IP for user + after-hours
+    Returns number of lines written.
+    """
+    Path(os.path.dirname(SIM_LOG_FILE)).mkdir(parents=True, exist_ok=True)
+    if (not overwrite) and os.path.exists(SIM_LOG_FILE) and os.path.getsize(SIM_LOG_FILE) > 0:
+        with open(SIM_LOG_FILE) as f:
+            return len(f.readlines())
+
+    lines = []
+    # Scenario A: brute force then success (compromised account)
+    for i in range(1, 6):
+        lines.append(f"Jan 27 09:10:{i:02d} demo sshd[2222]: Failed password for invalid user admin from 203.0.113.42 port 22")
+    lines.append("Jan 27 09:11:10 demo sshd[2222]: Accepted password for admin from 203.0.113.42 port 22")
+
+    # Scenario B: privilege escalation via sudo
+    lines.append("Jan 27 09:12:02 demo sudo: admin : TTY=pts/0 ; COMMAND=/bin/cat /etc/shadow")
+    lines.append("Jan 27 09:12:20 demo sudo: admin : TTY=pts/0 ; COMMAND=/usr/bin/id")
+
+    # Scenario C: root login (critical)
+    lines.append("Jan 27 09:13:00 demo sshd[3333]: Accepted password for root from 198.51.100.77 port 22")
+
+    # Scenario D: normal user from two IPs (new IP + after-hours)
+    lines.append("Jan 27 22:45:00 demo sshd[4444]: Accepted password for developer from 10.20.30.40 port 22")
+    lines.append("Jan 27 22:46:10 demo sshd[4444]: Accepted password for developer from 172.16.0.99 port 22")
+
+    with open(SIM_LOG_FILE, "w") as f:
+        for l in lines:
+            f.write(l + "\n")
+    return len(lines)
 
 
 # ── Data loaders ──────────────────────────────────────────────────────────────
@@ -88,21 +194,79 @@ def load_tbf() -> dict:
         return json.load(f)
 
 
+def load_srtc() -> dict:
+    if not os.path.exists(SRTC_FILE):
+        return {}
+    with open(SRTC_FILE) as f:
+        return json.load(f)
+
+
+def load_feedback_data() -> list:
+    """Load analyst feedback records to pass into ATRS modifier."""
+    all_fb = get_all_feedback()   # dict keyed by alert_id
+    result = []
+    for entry in all_fb.values():
+        if isinstance(entry, dict):
+            result.append(entry)
+    return result
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@app.route("/intelligence")
+def intelligence():
+    """
+    Unified intelligence hub:
+    • ATRS — Adaptive Threat Risk Score per entity (novel patent algorithm)
+    • Threat Narratives — auto-generated plain-English attack stories
+    • Predictions — Markov next-step, entropy, velocity
+    Replaces separate /narrative, /reputation, /prediction pages.
+    """
+    alerts       = load_alerts()
+    velocity     = load_velocity()
+    entropy      = load_entropy()
+    predictions  = load_predictions()
+    tbf          = load_tbf()
+    srtc         = load_srtc()
+    rep_data     = get_reputation()
+    narratives   = generate_narratives(alerts)
+    feedback     = load_feedback_data()
+
+    atrs_scores  = compute_all_atrs(
+        velocity_data  = velocity,
+        entropy_data   = entropy,
+        reputation_data= rep_data,
+        tbf_data       = tbf,
+        predictions    = predictions,
+        alerts         = alerts,
+        feedback_data  = feedback,
+    )
+
+    return render_template(
+        "intelligence.html",
+        atrs_scores  = atrs_scores,
+        narratives   = narratives,
+        predictions  = predictions,
+        entropy      = entropy,
+        velocity     = velocity,
+        srtc         = srtc,
+    )
+
+
+# Legacy redirect — keep old URLs working
 @app.route("/prediction")
 def prediction():
-    """
-    Novel feature showcase: combines Markov next-step prediction,
-    behavioral entropy, and attack velocity into one clean view.
-    """
-    return render_template(
-        "prediction.html",
-        predictions=load_predictions(),
-        entropy=load_entropy(),
-        velocity=load_velocity(),
-        tbf=load_tbf(),
-    )
+    return redirect(url_for("intelligence") + "#predictions")
+
+
+@app.route("/narrative")
+def narrative():
+    return redirect(url_for("intelligence") + "#narratives")
+
+
+@app.route("/reputation")
+def reputation():
+    return redirect(url_for("intelligence"))
 
 
 # ── Existing routes ───────────────────────────────────────────────────────────
@@ -120,32 +284,8 @@ def logs():
 
 @app.route("/analysis")
 def analysis():
-    events = load_events()
-    severity_count = Counter(e["severity"] for e in events)
-
-    attacker_ips = Counter(
-        e["ip"] for e in events if e.get("event_type") == "FAILED_LOGIN" and e.get("ip")
-    )
-    top_attackers = attacker_ips.most_common(5)
-
-    stats = {
-        "total_events":     len(events),
-        "failed_logins":    sum(1 for e in events if e["event_type"] == "FAILED_LOGIN"),
-        "success_logins":   sum(1 for e in events if e["event_type"] == "SUCCESS_LOGIN"),
-        "sudo_usage":       sum(1 for e in events if e["event_type"] == "SUDO_USAGE"),
-        "high_and_critical":sum(1 for e in events if e["severity"] in ("HIGH", "CRITICAL")),
-        "unique_ips":       len({e["ip"] for e in events if e.get("ip")}),
-        "last_timestamp":   events[-1]["timestamp"] if events else None,
-    }
-
-    velocity = load_velocity()
-    return render_template(
-        "analysis.html",
-        severity=severity_count,
-        stats=stats,
-        top_attackers=top_attackers,
-        velocity=velocity,
-    )
+    """Folded into Dashboard — redirect kept for backward compat."""
+    return redirect(url_for("home"))
 
 
 @app.route("/alerts")
@@ -168,7 +308,7 @@ def run_analysis():
         cwd=PROJECT_ROOT,
         check=False,
     )
-    return redirect(url_for("analysis"))
+    return redirect(url_for("home"))
 
 
 @app.route("/correlation")
@@ -204,23 +344,36 @@ def correlation():
 
 @app.route("/simulate")
 def simulate():
+    # Legacy: append a few demo lines and re-run pipeline.
+    # Keep this behavior, but never write into the *active* log directly.
+    _ensure_simulated_dataset_exists()
     samples = [
-        "Jan 27 11:00:01 kali sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22",
-        "Jan 27 11:00:05 kali sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22",
-        "Jan 27 11:00:10 kali sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22",
-        "Jan 27 11:00:15 kali sshd[3333]: Accepted password for backup from 203.0.113.42 port 22",
-        "Jan 27 11:01:00 kali sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id",
-        "Jan 27 12:00:01 kali sshd[4444]: Accepted password for developer from 172.16.0.99 port 22",
-        "Jan 27 12:05:00 kali sshd[4444]: Accepted password for developer from 10.20.30.40 port 22",
-        "Jan 27 12:01:00 kali sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow",
+        "Jan 27 11:00:01 demo sshd[3333]: Failed password for invalid user hacker from 203.0.113.42 port 22",
+        "Jan 27 11:00:05 demo sshd[3333]: Failed password for invalid user root from 203.0.113.42 port 22",
+        "Jan 27 11:00:10 demo sshd[3333]: Failed password for invalid user admin from 203.0.113.42 port 22",
+        "Jan 27 11:00:15 demo sshd[3333]: Accepted password for backup from 203.0.113.42 port 22",
+        "Jan 27 11:01:00 demo sudo: backup : TTY=pts/1 ; COMMAND=/usr/bin/id",
+        "Jan 27 12:00:01 demo sshd[4444]: Accepted password for developer from 172.16.0.99 port 22",
+        "Jan 27 12:05:00 demo sshd[4444]: Accepted password for developer from 10.20.30.40 port 22",
+        "Jan 27 12:01:00 demo sudo: developer : TTY=pts/2 ; COMMAND=/bin/cat /etc/shadow",
     ]
     to_append = random.sample(samples, min(3, len(samples)))
-    with open(LOG_FILE, "a") as f:
+    with open(SIM_LOG_FILE, "a") as f:
         for line in to_append:
             f.write(line + "\n")
 
-    subprocess.run(["python3", "-m", "main"], cwd=PROJECT_ROOT, check=False)
-    return redirect(url_for("analysis"))
+    # Rebuild active log using last selected mode (default: combined)
+    mode = "combined"
+    if os.path.exists(INGEST_CONFIG_FILE):
+        try:
+            with open(INGEST_CONFIG_FILE) as f:
+                mode = (json.load(f) or {}).get("mode", "combined")
+        except Exception:
+            mode = "combined"
+    _write_active_log(mode)
+
+    subprocess.run([sys.executable, "-m", "main"], cwd=PROJECT_ROOT, check=False)
+    return redirect(url_for("home"))
 
 
 # ── Exports ───────────────────────────────────────────────────────────────────
@@ -310,9 +463,15 @@ def export_compliance():
     lines.extend(["", "2. PRIVILEGE ESCALATION (sudo usage by user)", "-" * 40])
     for user, count in Counter(e["username"] for e in events if e.get("event_type") == "SUDO_USAGE").most_common():
         lines.append(f"  {user}: {count} sudo commands")
-    lines.extend(["", "3. CRITICAL ALERTS", "-" * 40])
+    lines.extend(["", "3. CRITICAL ALERTS (with MITRE + risk)", "-" * 40])
     for a in critical:
-        lines.append(f"  [{a.get('severity')}] {a.get('type')}: {a.get('message')}")
+        mitre = a.get("mitre_technique") or "—"
+        tactic = a.get("mitre_tactic") or "—"
+        risk = a.get("risk_score", 0)
+        lines.append(
+            f"  [{a.get('severity')}] {a.get('type')}: {a.get('message')}  "
+            f"(MITRE: {mitre} / {tactic}, Risk: {risk})"
+        )
     lines.append("")
 
     return Response(
@@ -336,6 +495,7 @@ def export_report():
     sudo_by_user    = Counter(e["username"] for e in events if e.get("event_type") == "SUDO_USAGE" and e.get("username"))
     top_sudo        = sudo_by_user.most_common(10)
     critical_alerts = [a for a in alerts if a.get("severity") in ("HIGH", "CRITICAL")]
+    all_alerts = sorted(alerts, key=lambda a: a.get("timestamp", ""), reverse=True)
 
     severity_count  = Counter(e["severity"] for e in events)
     total_e         = len(events) or 1
@@ -379,6 +539,18 @@ def export_report():
         "LOW"
     )
 
+    # Data mode for demo vs real-only runs
+    ingest_mode = "auto"
+    if os.path.exists(INGEST_CONFIG_FILE):
+        try:
+            with open(INGEST_CONFIG_FILE) as f:
+                ingest_mode = (json.load(f) or {}).get("mode", "auto")
+        except Exception:
+            ingest_mode = "auto"
+
+    src_counts = Counter(e.get("source", "unknown") for e in events)
+    src_summary = ", ".join(f"{k}:{v}" for k, v in src_counts.most_common()) if src_counts else "—"
+
     return render_template(
         "report_export.html",
         report_id=report_id,
@@ -386,6 +558,7 @@ def export_report():
         top_attackers=top_attackers,
         top_sudo=top_sudo,
         critical_alerts=critical_alerts,
+        all_alerts=all_alerts,
         total_events=len(events),
         total_alerts=len(alerts),
         unique_ips=unique_ips,
@@ -395,71 +568,21 @@ def export_report():
         risk_score_summary=risk_score_summary,
         mitre_tactic_freq=mitre_tactic_freq,
         max_severity=max_sev,
+        ingest_mode=ingest_mode,
+        src_summary=src_summary,
     )
 
 
-# ── Novel Feature Routes ──────────────────────────────────────────────────────
-
-@app.route("/narrative")
-def narrative():
-    """
-    🆕 Novel Feature #1 (P0): Threat Narrative Generator
-    Synthesizes plain-English attack stories from alert sequences.
-    """
-    alerts   = load_alerts()
-    narratives = generate_narratives(alerts)
-    return render_template("narrative.html", narratives=narratives)
-
-
-@app.route("/reputation")
-def reputation():
-    """
-    🆕 Novel Feature #4 (P1): Entity Reputation Heat Score
-    Shows persistent internal reputation built from observed behavior.
-    """
-    rep_data = get_reputation()
-    entropy  = load_entropy()
-    return render_template("reputation.html", entities=rep_data, entropy=entropy)
-
+# ── Legacy page redirects (routes replaced by unified /intelligence) ──────────
 
 @app.route("/dna")
 def dna_view():
-    """
-    🆕 Novel Feature #5 (P2): Alert DNA Fingerprinting
-    Groups alerts by behavioral pattern fingerprint (not entity identity).
-    """
-    alerts = load_alerts()
-    for idx, a in enumerate(alerts, start=1):
-        a["id"] = idx
-    groups = get_dna_groups(alerts)
-    dna_groups = []
-    for dna, group_alerts in groups.items():
-        dna_groups.append({
-            "dna":         dna,
-            "description": describe_dna(dna, group_alerts),
-            "count":       len(group_alerts),
-            "severity":    max((a.get("severity", "LOW") for a in group_alerts),
-                               key=lambda s: {"LOW":0,"MEDIUM":1,"HIGH":2,"CRITICAL":3}.get(s,0)),
-            "alerts":      group_alerts,
-        })
-    dna_groups.sort(key=lambda g: -{"LOW":0,"MEDIUM":1,"HIGH":2,"CRITICAL":3}.get(g["severity"],0))
-    return render_template("dna.html", dna_groups=dna_groups)
+    return redirect(url_for("intelligence"))
 
 
 @app.route("/simulator")
 def simulator():
-    """
-    🆕 Novel Feature #6 (P2): What-If Attack Simulator
-    Test whether detection rules would catch a given attack scenario.
-    """
-    mitre_tactics = [
-        {"id": "T1110",     "name": "Brute Force",                 "tactic": "Credential Access",    "event_type": "FAILED_LOGIN",   "count": 5},
-        {"id": "T1078",     "name": "Valid Accounts",              "tactic": "Initial Access",       "event_type": "SUCCESS_LOGIN",  "count": 1},
-        {"id": "T1548",     "name": "Abuse Elevation Control",     "tactic": "Privilege Escalation", "event_type": "SUDO_USAGE",     "count": 1},
-        {"id": "T1078.003", "name": "Root Account",                "tactic": "Privilege Escalation", "event_type": "ROOT_LOGIN",     "count": 1},
-        {"id": "T1021",     "name": "Remote Services (New IP)",    "tactic": "Lateral Movement",     "event_type": "NEW_IP_LOGIN",   "count": 1},
-    ]
-    return render_template("simulator.html", mitre_tactics=mitre_tactics)
+    return redirect(url_for("intelligence"))
 
 
 @app.route("/api/simulate", methods=["POST"])
@@ -637,6 +760,19 @@ def live_logs():
     source_counts = Counter(e.get("source", "unknown") for e in real_events)
     event_type_counts = Counter(e.get("event_type", "unknown") for e in real_events)
     syslog_st = syslog_status()
+    ingest_cfg = {}
+    current_mode = "real_only"
+    if os.path.exists(INGEST_CONFIG_FILE):
+        try:
+            with open(INGEST_CONFIG_FILE) as f:
+                ingest_cfg = json.load(f) or {}
+            current_mode = ingest_cfg.get("mode", "real_only")
+        except Exception:
+            ingest_cfg = {}
+            current_mode = "real_only"
+
+    active_events = load_events()
+    active_source_counts = Counter(e.get("source", "unknown") for e in active_events)
 
     return render_template(
         "live_logs.html",
@@ -646,7 +782,35 @@ def live_logs():
         event_type_counts=dict(event_type_counts),
         syslog_status=syslog_st,
         real_log_exists=os.path.exists(REAL_LOG_FILE),
+        simulated_log_exists=os.path.exists(SIM_LOG_FILE) and os.path.getsize(SIM_LOG_FILE) > 0,
+        syslog_log_exists=os.path.exists(SYSLOG_LOG_FILE) and os.path.getsize(SYSLOG_LOG_FILE) > 0,
+        current_mode=current_mode,
+        current_lookback=int(ingest_cfg.get("lookback_hours", 168)),
+        active_event_count=len(active_events),
+        active_source_counts=dict(active_source_counts),
     )
+
+
+@app.route("/seed-demo", methods=["POST"])
+def seed_demo():
+    """
+    Create/overwrite a stable simulated dataset for mentor demos,
+    set mode=simulated_only, rebuild active log, and run the pipeline.
+    """
+    try:
+        _seed_simulated_demo(overwrite=True)
+
+        mode = "simulated_only"
+        lookback_hours = int(request.form.get("lookback_hours", 168))
+        Path(os.path.dirname(INGEST_CONFIG_FILE)).mkdir(parents=True, exist_ok=True)
+        with open(INGEST_CONFIG_FILE, "w") as f:
+            json.dump({"mode": mode, "lookback_hours": lookback_hours}, f, indent=2)
+
+        _write_active_log(mode)
+        subprocess.run([sys.executable, "-m", "main"], cwd=PROJECT_ROOT, check=False)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    return redirect(url_for("live_logs"))
 
 
 @app.route("/ingest-real", methods=["POST"])
@@ -659,35 +823,17 @@ def ingest_real():
     lookback_hours = int(request.form.get("lookback_hours", 168))
 
     try:
+        # Persist selection so syslog batches can rebuild the active log correctly
+        Path(os.path.dirname(INGEST_CONFIG_FILE)).mkdir(parents=True, exist_ok=True)
+        with open(INGEST_CONFIG_FILE, "w") as f:
+            json.dump({"mode": mode, "lookback_hours": lookback_hours}, f, indent=2)
+
         if mode in ("real_only", "combined"):
             # Collect real logs from macOS
-            n_real = write_real_logs_to_file(REAL_LOG_FILE, lookback_hours=lookback_hours)
+            write_real_logs_to_file(REAL_LOG_FILE, lookback_hours=lookback_hours)
 
-        if mode == "real_only":
-            # Run pipeline on real logs only
-            import shutil
-            shutil.copy(REAL_LOG_FILE, LOG_FILE)
-
-        elif mode == "combined":
-            # Merge simulated + real into combined log
-            lines = []
-            if os.path.exists(LOG_FILE):
-                with open(LOG_FILE) as f:
-                    lines += f.readlines()
-            if os.path.exists(REAL_LOG_FILE):
-                with open(REAL_LOG_FILE) as f:
-                    lines += f.readlines()
-            # De-duplicate and sort (roughly)
-            seen = set()
-            unique = []
-            for l in lines:
-                if l not in seen:
-                    seen.add(l)
-                    unique.append(l)
-            with open(COMBINED_LOG, "w") as f:
-                f.writelines(unique)
-            import shutil
-            shutil.copy(COMBINED_LOG, LOG_FILE)
+        # Always rebuild the active pipeline input log from selected sources
+        _write_active_log(mode)
 
         # Run pipeline
         subprocess.run([sys.executable, "-m", "main"], cwd=PROJECT_ROOT, check=False)
@@ -707,8 +853,18 @@ def api_syslog_listener():
     action = (request.get_json() or {}).get("action", "start")
     if action == "start":
         def _pipeline_callback():
+            # Rebuild active log based on last selected ingest mode, then rerun pipeline.
+            mode = "combined"
+            if os.path.exists(INGEST_CONFIG_FILE):
+                try:
+                    with open(INGEST_CONFIG_FILE) as f:
+                        mode = (json.load(f) or {}).get("mode", "combined")
+                except Exception:
+                    mode = "combined"
+            _write_active_log(mode)
             subprocess.run([sys.executable, "-m", "main"], cwd=PROJECT_ROOT, check=False)
-        start_listener_thread(LOG_FILE, on_batch_callback=_pipeline_callback)
+        # Network syslog should never pollute the demo corpus.
+        start_listener_thread(SYSLOG_LOG_FILE, on_batch_callback=_pipeline_callback)
     else:
         stop_listener()
     return jsonify(syslog_status())
@@ -739,6 +895,79 @@ def api_dashboard_stats():
         "high_alerts":       sum(1 for a in alerts if a.get("severity") == "HIGH"),
         "last_timestamp":    events[-1].get("timestamp") if events else None,
     })
+
+
+@app.route("/api/recent-alerts")
+def api_recent_alerts():
+    """Return the N most-recent alerts for the dashboard feed."""
+    alerts = load_alerts()
+    # Sort newest-first, return last 20
+    alerts_sorted = sorted(
+        alerts,
+        key=lambda a: a.get("timestamp", ""),
+        reverse=True,
+    )
+    safe = []
+    for a in alerts_sorted[:20]:
+        safe.append({
+            "type":      a.get("type", ""),
+            "message":   a.get("message", ""),
+            "severity":  a.get("severity", "LOW"),
+            "timestamp": a.get("timestamp", ""),
+            "risk_score": a.get("risk_score", 0),
+        })
+    return jsonify(safe)
+
+
+@app.route("/api/top-attackers")
+def api_top_attackers():
+    """Return top 5 source IPs by failed-login count."""
+    events = load_events()
+    counter = Counter(
+        e["ip"] for e in events
+        if e.get("event_type") == "FAILED_LOGIN" and e.get("ip")
+    )
+    return jsonify(counter.most_common(5))
+
+
+@app.route("/api/atrs-top")
+def api_atrs_top():
+    """Compute and return top 5 ATRS entity scores for the dashboard widget."""
+    alerts      = load_alerts()
+    velocity    = load_velocity()
+    entropy     = load_entropy()
+    predictions = load_predictions()
+    tbf         = load_tbf()
+    rep_data    = get_reputation()
+    feedback    = load_feedback_data()
+
+    scores = compute_all_atrs(
+        velocity_data   = velocity,
+        entropy_data    = entropy,
+        reputation_data = rep_data,
+        tbf_data        = tbf,
+        predictions     = predictions,
+        alerts          = alerts,
+        feedback_data   = feedback,
+    )
+    # Serialize (strip large explanation for the widget)
+    result = []
+    for r in scores[:5]:
+        result.append({
+            "entity":     r["entity"],
+            "atrs_score": r["atrs_score"],
+            "risk_label": r["risk_label"],
+            "color":      r["color"],
+        })
+    return jsonify(result)
+
+
+@app.route("/api/srtc-top")
+def api_srtc_top():
+    """Return top 5 SRTC entities for dashboard widgets."""
+    srtc = load_srtc()
+    rows = sorted(srtc.values(), key=lambda x: x.get("srtc_score", 0), reverse=True)[:5]
+    return jsonify(rows)
 
 
 # ── Startup: auto-collect real macOS logs in background ──────────────────────
