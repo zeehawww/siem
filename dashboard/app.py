@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask import Flask, render_template, redirect, url_for, request, Response, jsonify
 import csv
 import hashlib

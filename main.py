@@ -56,7 +56,7 @@ def run_pipeline(log_file: str = None) -> None:
     logs = collect_logs(log_file or LOG_FILE)
 
     normalized_events  = []
-    collected_alerts   = []   # list of (alert_dict, event_dict)
+    collected_alerts   = []  
 
     for line in logs:
         event = parse_log(line)
@@ -68,20 +68,17 @@ def run_pipeline(log_file: str = None) -> None:
         for alert in analyze_event(event):
             collected_alerts.append((alert, event))
 
-    # ── Novel Feature: DNA Fingerprinting ────────────────────────────────────
-    # Enrich all alerts with behavioral DNA before deduplication so the DNA
-    # field is preserved in the persisted records.
+
     if collected_alerts:
         alerts_only = [a for a, _ in collected_alerts]
         enriched    = enrich_with_dna(collected_alerts)
-        # Re-pair enriched alerts with their events
+  
         collected_alerts = [(enriched[i], collected_alerts[i][1]) for i in range(len(enriched))]
 
-    # ── Novel Feature: Noise reduction — deduplicate + persist ───────────────
+
     persist_alerts(collected_alerts, deduplicate=True, min_severity="LOW")
 
-    # ── Novel Feature: Entity Reputation Heat Scores ──────────────────────────
-    # Load persisted alerts (post-dedup) to feed reputation engine
+   
     alerts_file = os.path.join(BASE_DIR, "storage", "alerts.json")
     try:
         with open(alerts_file) as f:

@@ -14,6 +14,8 @@ Patent angle: "Method for cross-entity behavioral fingerprinting of security
 events using sequence-normalized hashing."
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 

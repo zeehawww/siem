@@ -1,152 +1,152 @@
 {
   "192.168.1.10": {
-    "score": 0.14247633413573063,
+    "score": 0.07437353689593974,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
     "alert_count": 3,
     "kind": "ip",
     "worst_type": "BRUTE_FORCE",
     "worst_severity": "HIGH",
-    "runs_since_last_alert": 47,
+    "runs_since_last_alert": 51,
     "last_seen": "2026-04-13T04:42:15.122078+00:00"
   },
   "admin": {
-    "score": 758.6806174444512,
+    "score": 905.8960240598625,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
-    "alert_count": 15,
+    "alert_count": 19,
     "kind": "user",
     "worst_type": "BRUTE_FORCE",
     "worst_severity": "HIGH",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "user": {
-    "score": 0.14867095735902325,
+    "score": 0.07760716893489361,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
     "alert_count": 3,
     "kind": "user",
     "worst_type": "COMPROMISED_ACCOUNT",
     "worst_severity": "CRITICAL",
-    "runs_since_last_alert": 47,
+    "runs_since_last_alert": 51,
     "last_seen": "2026-04-13T04:42:15.122078+00:00"
   },
   "10.0.0.5": {
-    "score": 0.09911397157268219,
+    "score": 0.05173811262326242,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
     "alert_count": 3,
     "kind": "ip",
     "worst_type": "ROOT_LOGIN",
     "worst_severity": "CRITICAL",
-    "runs_since_last_alert": 47,
+    "runs_since_last_alert": 51,
     "last_seen": "2026-04-13T04:42:15.122078+00:00"
   },
   "root": {
-    "score": 595.4476915779859,
+    "score": 565.757416551781,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
-    "alert_count": 50,
+    "alert_count": 54,
     "kind": "user",
     "worst_type": "ROOT_LOGIN",
     "worst_severity": "CRITICAL",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "10.20.30.40": {
-    "score": 109.08418805704953,
+    "score": 130.2350029419552,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
-    "alert_count": 15,
+    "alert_count": 19,
     "kind": "ip",
     "worst_type": "AFTER_HOURS_LOGIN",
     "worst_severity": "MEDIUM",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "developer": {
-    "score": 336.7292578036586,
+    "score": 402.02515213137104,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
-    "alert_count": 15,
+    "alert_count": 19,
     "kind": "user",
     "worst_type": "AFTER_HOURS_LOGIN",
     "worst_severity": "MEDIUM",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "backup": {
-    "score": 0.14867095735902325,
+    "score": 0.07760716893489361,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
     "alert_count": 3,
     "kind": "user",
     "worst_type": "PRIV_ESC",
     "worst_severity": "HIGH",
-    "runs_since_last_alert": 47,
+    "runs_since_last_alert": 51,
     "last_seen": "2026-04-13T04:42:15.122078+00:00"
   },
   "203.0.113.42": {
-    "score": 545.4085510388011,
+    "score": 651.1685474456982,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
-    "alert_count": 15,
+    "alert_count": 19,
     "kind": "ip",
     "worst_type": "BRUTE_FORCE",
     "worst_severity": "HIGH",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "hacker": {
-    "score": 0.049556985786341094,
+    "score": 0.02586905631163121,
     "first_seen": "2026-04-13T03:50:12.684097+00:00",
     "alert_count": 3,
     "kind": "user",
     "worst_type": "BRUTE_FORCE",
     "worst_severity": "HIGH",
-    "runs_since_last_alert": 47,
+    "runs_since_last_alert": 51,
     "last_seen": "2026-04-13T04:42:15.122078+00:00"
   },
   "0.0.0.0": {
-    "score": 213.48526619326225,
+    "score": 254.83876823579658,
     "first_seen": "2026-04-13T04:36:40.999077+00:00",
-    "alert_count": 14,
+    "alert_count": 18,
     "kind": "ip",
     "worst_type": "PRIV_ESC",
     "worst_severity": "HIGH",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "127.0.0.1": {
-    "score": 273.8798750272519,
+    "score": 142.96700651344437,
     "first_seen": "2026-04-13T06:41:48.973470+00:00",
     "alert_count": 37,
     "kind": "ip",
     "worst_type": "AFTER_HOURS_LOGIN",
     "worst_severity": "MEDIUM",
-    "runs_since_last_alert": 4,
+    "runs_since_last_alert": 8,
     "last_seen": "2026-04-16T02:06:10.423361+00:00"
   },
   "azam": {
-    "score": 57.846827650171015,
+    "score": 30.196405576062077,
     "first_seen": "2026-04-13T06:41:48.973470+00:00",
     "alert_count": 37,
     "kind": "user",
     "worst_type": "AFTER_HOURS_LOGIN",
     "worst_severity": "MEDIUM",
-    "runs_since_last_alert": 4,
+    "runs_since_last_alert": 8,
     "last_seen": "2026-04-16T02:06:10.423361+00:00"
   },
   "198.51.100.77": {
-    "score": 379.3155302293324,
+    "score": 452.93507750177537,
     "first_seen": "2026-04-16T01:43:21.122471+00:00",
-    "alert_count": 12,
+    "alert_count": 16,
     "kind": "ip",
     "worst_type": "ROOT_LOGIN",
     "worst_severity": "CRITICAL",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   },
   "172.16.0.99": {
-    "score": 227.5893181375994,
+    "score": 271.76104650106527,
     "first_seen": "2026-04-16T01:43:21.122471+00:00",
-    "alert_count": 12,
+    "alert_count": 16,
     "kind": "ip",
     "worst_type": "NEW_IP_FOR_USER",
     "worst_severity": "MEDIUM",
     "runs_since_last_alert": 0,
-    "last_seen": "2026-04-16T04:00:55.935766+00:00"
+    "last_seen": "2026-04-21T01:23:49.912236+00:00"
   }
 }

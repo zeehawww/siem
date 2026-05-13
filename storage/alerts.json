@@ -1,6 +1,6 @@
 [
   {
-    "timestamp": "2026-04-16T04:00:55.934477Z",
+    "timestamp": "2026-04-21T01:23:49.910820Z",
     "type": "BRUTE_FORCE",
     "severity": "HIGH",
     "message": "Multiple failed logins from 203.0.113.42 (\u00d73 occurrences)",
@@ -18,7 +18,7 @@
     "count": 3
   },
   {
-    "timestamp": "2026-04-16T04:00:55.934759Z",
+    "timestamp": "2026-04-21T01:23:49.911117Z",
     "type": "COMPROMISED_ACCOUNT",
     "severity": "CRITICAL",
     "message": "Successful login after failures from 203.0.113.42",
@@ -36,7 +36,7 @@
     "count": 1
   },
   {
-    "timestamp": "2026-04-16T04:00:55.934889Z",
+    "timestamp": "2026-04-21T01:23:49.911241Z",
     "type": "PRIV_ESC",
     "severity": "HIGH",
     "message": "Sudo used by admin (\u00d72 occurrences)",
@@ -54,7 +54,7 @@
     "count": 2
   },
   {
-    "timestamp": "2026-04-16T04:00:55.935009Z",
+    "timestamp": "2026-04-21T01:23:49.911358Z",
     "type": "ROOT_LOGIN",
     "severity": "CRITICAL",
     "message": "Root login detected from 198.51.100.77",
@@ -72,7 +72,7 @@
     "count": 1
   },
   {
-    "timestamp": "2026-04-16T04:00:55.935145Z",
+    "timestamp": "2026-04-21T01:23:49.911468Z",
     "type": "AFTER_HOURS_LOGIN",
     "severity": "MEDIUM",
     "message": "Login by developer from 10.20.30.40 at hour 22:xx (outside business hours)",
@@ -90,7 +90,7 @@
     "count": 1
   },
   {
-    "timestamp": "2026-04-16T04:00:55.935277Z",
+    "timestamp": "2026-04-21T01:23:49.911591Z",
     "type": "NEW_IP_FOR_USER",
     "severity": "MEDIUM",
     "message": "User developer logged in from new IP 172.16.0.99 (previously seen: 10.20.30.40)",
@@ -108,7 +108,7 @@
     "count": 1
   },
   {
-    "timestamp": "2026-04-16T04:00:55.935412Z",
+    "timestamp": "2026-04-21T01:23:49.911710Z",
     "type": "AFTER_HOURS_LOGIN",
     "severity": "MEDIUM",
     "message": "Login by developer from 172.16.0.99 at hour 22:xx (outside business hours)",

@@ -13,6 +13,8 @@ Patent angle: "Rule-based alert confidence calibration system using analyst
 feedback without machine learning retraining."
 """
 
+from __future__ import annotations
+
 import json
 import os
 from datetime import datetime, timezone

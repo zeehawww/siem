@@ -16,6 +16,8 @@ Novel additions:
      mode flag to test rule coverage without affecting live state.
 """
 
+from __future__ import annotations
+
 import time
 from typing import Optional, List, Dict, Any
 from collections import defaultdict

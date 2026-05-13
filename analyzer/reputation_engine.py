@@ -14,6 +14,8 @@ entities using historical alert telemetry without external threat intelligence
 dependencies."
 """
 
+from __future__ import annotations
+
 import json
 import os
 from datetime import datetime, timezone
